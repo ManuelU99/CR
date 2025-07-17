@@ -6,7 +6,7 @@ import streamlit as st
 st.set_page_config(page_title="CR - Tracción Dashboard", layout="wide")
 
 # Load data
-file_path = r"C:\Users\60098360\Desktop\Excel files\Data bi CR.csv"
+file_path = "data_bi_CR.csv"
 df = pd.read_csv(file_path)
 
 # Define key columns
