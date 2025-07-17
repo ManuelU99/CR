@@ -2,28 +2,27 @@ import pandas as pd
 import plotly.express as px
 import streamlit as st
 
-# Set Streamlit page config
-st.set_page_config(page_title="Dashboard Curvas de Revenido", layout="wide")
+# Set page config
+st.set_page_config(page_title="CR Dashboard 🚀", layout="wide")
 
 # Load data
 file_path = "data_bi_CR.csv"
 df = pd.read_csv(file_path)
 
 # Define key columns
-columns_traccion = df.columns[7:20]   # H to T
-columns_dureza = df.columns[22:30]    # W to AD
-columns_charpy = df.columns[33:44]    # AH to AR
+columns_traccion = df.columns[7:20]    # H to T
+columns_dureza = df.columns[22:30]     # W to AD
+columns_charpy = df.columns[33:44]     # AH to AR
 
-column_a = df.columns[0]              # Tipo_Acero_Limpio
-column_e = df.columns[4]              # Muestra_Probeta_Temp
-column_f = df.columns[5]              # Tubo
+column_a = df.columns[0]               # Tipo_Acero_Limpio
+column_e = df.columns[4]               # Muestra_Probeta_Temp
+column_f = df.columns[5]               # Tubo
 
 # Extract Temp (number after second '-')
 df['Temp'] = df[column_e].str.extract(r'-(?:[^-]*)-(\d+)').astype(float)
 
 # Sidebar filters
 st.sidebar.header("Filters")
-
 selected_tipo = st.sidebar.multiselect("Select Tipo_Acero_Limpio", sorted(df[column_a].dropna().unique()), sorted(df[column_a].dropna().unique()))
 filtered_df_for_soaking = df[df[column_a].isin(selected_tipo)] if selected_tipo else df
 selected_soaking = st.sidebar.multiselect("Select Soaking", sorted(filtered_df_for_soaking[column_f].dropna().unique()), sorted(filtered_df_for_soaking[column_f].dropna().unique()))
@@ -56,27 +55,43 @@ else:
         value_name='Value'
     ).dropna(subset=['Value', 'Temp'])
 
-    # Assign ColorGroup and LineDash
-    def assign_color_group(m):
+    # Assign color and dash style
+    def assign_color(m):
+        # Traccion group
         if "Fluencia" in m:
-            return 'Fluencia'
+            return '#CC0066'
         if "Rotura" in m:
-            return 'Rotura'
+            return '#00009A'
         if "Alarg" in m:
-            return 'Alarg'
-        if "Dureza" in m and "Ind" in m and "Max" in m:
-            return 'Dureza Ind Max'
-        if "Dureza" in m and "Ind" in m and "Min" in m:
-            return 'Dureza Ind Min'
-        if "Dureza" in m and "Prom" in m and "Max" in m:
-            return 'Dureza Prom Max'
-        if "Dureza" in m and "Prom" in m and "Min" in m:
-            return 'Dureza Prom Min'
-        if "Energ" in m:
-            return 'Energ'
-        if "Area" in m:
-            return 'Area'
-        return 'Other'
+            return '#009900'
+        # Dureza group
+        if "Dureza" in m and "Ind" in m and "Max" in m and "Req" not in m:
+            return '#CC0066'
+        if "Dureza" in m and "Ind" in m and "Min" in m and "Req" not in m:
+            return '#EC36E0'
+        if "Dureza" in m and "Ind" in m and "Max" in m and "Req" in m:
+            return '#CC0066'
+        if "Dureza" in m and "Ind" in m and "Min" in m and "Req" in m:
+            return '#CC0066'
+        if "Dureza" in m and "Prom" in m and "Max" in m and "Req" not in m:
+            return '#00009A'
+        if "Dureza" in m and "Prom" in m and "Min" in m and "Req" not in m:
+            return '#1F7CC7'
+        if "Dureza" in m and "Prom" in m and "Max" in m and "Req" in m:
+            return '#00009A'
+        if "Dureza" in m and "Prom" in m and "Min" in m and "Req" in m:
+            return '#00009A'
+        # Charpy group
+        if "Energ" in m and "Ind" in m and "Min" in m:
+            return '#CC0066'
+        if "Energ" in m and "Prom" in m and "Min" in m:
+            return '#00009A'
+        if "Area" in m and "Ind" in m and "Min" in m:
+            return '#009900'
+        if "Area" in m and "Prom" in m and "Min" in m:
+            return '#252423'
+        # fallback
+        return '#999999'
 
     def assign_dash(m):
         if "Req" in m and "Max" in m:
@@ -86,52 +101,34 @@ else:
         else:
             return 'solid'
 
-    long_df['ColorGroup'] = long_df['Measurement'].apply(assign_color_group)
+    long_df['ColorHex'] = long_df['Measurement'].apply(assign_color)
     long_df['LineDash'] = long_df['Measurement'].apply(assign_dash)
     long_df['Legend'] = long_df['Measurement'] + ' (Soaking ' + long_df[column_f].astype(str) + ')'
 
-    # Define color map per ColorGroup
-    color_map = {
-        'Fluencia': '#CC0066',
-        'Rotura': '#00009A',
-        'Alarg': '#009900',
-        'Dureza Ind Max': '#CC0066',
-        'Dureza Ind Min': '#EC36E0',
-        'Dureza Prom Max': '#00009A',
-        'Dureza Prom Min': '#1F7CC7',
-        'Energ': '#CC0066',
-        'Area': '#009900',
-        'Other': '#999999'
-    }
+    # Create color map per unique Legend
+    color_discrete_map = dict(zip(long_df['Legend'], long_df['ColorHex']))
 
+    # Plot
     fig = px.line(
         long_df,
         x='Temp',
         y='Value',
-        color='ColorGroup',
+        color='Legend',
         line_dash='LineDash',
-        hover_name='Legend',
+        color_discrete_map=color_discrete_map,
         markers=True,
         title=f"CR - {test_type}",
         labels={'Temp': 'Temp', 'Value': 'Value'}
     )
 
-    fig.update_traces(line=dict(width=2))
     fig.update_layout(
-        coloraxis_showscale=False,
-        legend_title='Series Group',
+        xaxis=dict(tickangle=0),
+        legend_title='Series',
         height=700,
         width=1200
     )
 
-    # Apply custom colors
-    for trace in fig.data:
-        group = trace.name
-        trace.line.color = color_map.get(group, '#999999')
-
-    # Show plot
     st.plotly_chart(fig, use_container_width=True)
 
-    # Optional: Show data table
     if st.checkbox("Show filtered data table"):
         st.write(df_filtered)
