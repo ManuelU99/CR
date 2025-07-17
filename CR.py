@@ -2,46 +2,24 @@ import pandas as pd
 import plotly.express as px
 import streamlit as st
 
-# Set Streamlit page config
-st.set_page_config(page_title="CR Tracción Dashboard 🚀", layout="wide")
+# Streamlit page setup
+st.set_page_config(page_title="CR - Tracción Dashboard", layout="wide")
 
 # Load data
-file_path = "data_bi_CR.csv"
+file_path = r"C:\Users\60098360\Desktop\Excel files\Data bi CR.csv"
 df = pd.read_csv(file_path)
 
 # Define key columns
 columns_ht = df.columns[7:20]  # H to T
 column_a = df.columns[0]       # Tipo_Acero_Limpio
-column_b = df.columns[1]       # Grado_Acero
-column_c = df.columns[2]       # Ciclo
-column_d = df.columns[3]       # Familia
 column_e = df.columns[4]       # Muestra_Probeta_Temp
 column_f = df.columns[5]       # Tubo
 
-# Extract Temp (number after second '-')
+# Extract Temp: number after second '-'
 df['Temp'] = df[column_e].str.extract(r'-(?:[^-]*)-(\d+)').astype(float)
 
-# Sidebar filters
-st.sidebar.header("Filters")
-
-selected_familia = st.sidebar.multiselect("Select Familia", sorted(df[column_d].dropna().unique()), sorted(df[column_d].dropna().unique()))
-selected_ciclo = st.sidebar.multiselect("Select Ciclo", sorted(df[column_c].dropna().unique()), sorted(df[column_c].dropna().unique()))
-selected_grado = st.sidebar.multiselect("Select Grado_Acero", sorted(df[column_b].dropna().unique()), sorted(df[column_b].dropna().unique()))
-selected_tipo = st.sidebar.multiselect("Select Tipo_Acero_Limpio", sorted(df[column_a].dropna().unique()), sorted(df[column_a].dropna().unique()))
-selected_tubos = sorted(df[df[column_a].isin(selected_tipo)][column_f].dropna().unique())
-selected_tubo = st.sidebar.multiselect("Select Tubo", selected_tubos, selected_tubos)
-
-# Apply filters
-df_filtered = df[
-    (df[column_d].isin(selected_familia)) &
-    (df[column_c].isin(selected_ciclo)) &
-    (df[column_b].isin(selected_grado)) &
-    (df[column_a].isin(selected_tipo)) &
-    (df[column_f].isin(selected_tubo))
-]
-
-# Prepare long-format dataframe
-long_df = df_filtered.melt(
+# Melt to long format
+long_df = df.melt(
     id_vars=[column_a, column_e, 'Temp', column_f],
     value_vars=columns_ht,
     var_name='Measurement',
@@ -52,9 +30,24 @@ long_df = df_filtered.melt(
 long_df['LineStyle'] = long_df['Measurement'].apply(lambda x: 'dash' if 'Req' in x else 'solid')
 long_df['Legend'] = long_df['Measurement'] + ' (Tubo ' + long_df[column_f].astype(str) + ')'
 
-# Plot with Plotly
+# Sidebar filters
+st.sidebar.header("Filters")
+
+# Tipo_Acero_Limpio filter
+tipo_options = sorted(long_df[column_a].dropna().unique())
+selected_tipos = st.sidebar.multiselect("Select Tipo_Acero_Limpio", tipo_options, default=tipo_options)
+
+# Filter Tubo options dynamically
+filtered_df = long_df[long_df[column_a].isin(selected_tipos)]
+tubo_options = sorted(filtered_df[column_f].dropna().unique())
+selected_tubos = st.sidebar.multiselect("Select Tubo", tubo_options, default=tubo_options)
+
+# Apply both filters
+final_df = filtered_df[filtered_df[column_f].isin(selected_tubos)]
+
+# Plot
 fig = px.line(
-    long_df,
+    final_df,
     x='Temp',
     y='Value',
     color='Legend',
@@ -75,5 +68,5 @@ fig.update_layout(
 st.plotly_chart(fig, use_container_width=True)
 
 # Optional: Show data table
-if st.checkbox("Show filtered data table"):
-    st.write(df_filtered)
+if st.checkbox("Show data table"):
+    st.write(final_df)
