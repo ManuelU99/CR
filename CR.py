@@ -3,7 +3,7 @@ import plotly.express as px
 import streamlit as st
 
 # Set Streamlit page config
-st.set_page_config(page_title="CR Tracción Dashboard 🚀", layout="wide")
+st.set_page_config(page_title="CR Dashboard 🚀", layout="wide")
 
 # Load data
 file_path = "data_bi_CR.csv"
@@ -59,21 +59,43 @@ else:
         value_name='Value'
     ).dropna(subset=['Value', 'Temp'])
 
-    # Assign color and line style
-    def assign_color(measurement):
-        if "Fluencia" in measurement:
+    # Assign color
+    def assign_color(m):
+        if "Dureza" in m and "Ind" in m and "Max" in m and "Req" not in m:
             return '#CC0066'
-        elif "Rotura" in measurement:
-            return '#00009A'
-        elif "Alarg" in measurement:
-            return '#009900'
-        else:
-            return '#999999'  # fallback gray
+        if "Dureza" in m and "Ind" in m and "Min" in m and "Req" not in m:
+            return '#EC36E0'
+        if "Dureza" in m and "Ind" in m and "Max" in m and "Req" in m:
+            return '#CC0066'
+        if "Dureza" in m and "Ind" in m and "Min" in m and "Req" in m:
+            return '#CC0066'
 
-    def assign_dash(measurement):
-        if "Req" in measurement and "Max" in measurement:
+        if "Dureza" in m and "Prom" in m and "Max" in m and "Req" not in m:
+            return '#00009A'
+        if "Dureza" in m and "Prom" in m and "Min" in m and "Req" not in m:
+            return '#1F7CC7'
+        if "Dureza" in m and "Prom" in m and "Max" in m and "Req" in m:
+            return '#00009A'
+        if "Dureza" in m and "Prom" in m and "Min" in m and "Req" in m:
+            return '#00009A'
+
+        if "Energ" in m and "Ind" in m and "Min" in m:
+            return '#CC0066'
+        if "Energ" in m and "Prom" in m and "Min" in m:
+            return '#00009A'
+        if "Area" in m and "Ind" in m and "Min" in m:
+            return '#009900'
+        if "Area" in m and "Prom" in m and "Min" in m:
+            return '#252423'
+
+        # fallback
+        return '#999999'
+
+    # Assign dash style
+    def assign_dash(m):
+        if "Req" in m and "Max" in m:
             return 'dash'
-        elif "Req" in measurement and "Min" in measurement:
+        elif "Req" in m and "Min" in m:
             return 'dot'
         else:
             return 'solid'
@@ -82,6 +104,10 @@ else:
     long_df['LineDash'] = long_df['Measurement'].apply(assign_dash)
     long_df['Legend'] = long_df['Measurement'] + ' (Soaking ' + long_df[column_f].astype(str) + ')'
 
+    # Create color mapping for unique legends
+    unique_legends = long_df[['Legend', 'ColorGroup']].drop_duplicates()
+    color_discrete_map = dict(zip(unique_legends['Legend'], unique_legends['ColorGroup']))
+
     # Plot with Plotly
     fig = px.line(
         long_df,
@@ -89,7 +115,7 @@ else:
         y='Value',
         color='Legend',
         line_dash='LineDash',
-        color_discrete_map={lg: cg for lg, cg in zip(long_df['Legend'], long_df['ColorGroup'])},
+        color_discrete_map=color_discrete_map,
         markers=True,
         title=f"CR - {test_type}",
         labels={'Temp': 'Temp', 'Value': 'Value'}
