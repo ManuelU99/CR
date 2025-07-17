@@ -10,10 +10,13 @@ file_path = "data_bi_CR.csv"
 df = pd.read_csv(file_path)
 
 # Define key columns
-columns_ht = df.columns[7:20]  # H to T
-column_a = df.columns[0]       # Tipo_Acero_Limpio
-column_e = df.columns[4]       # Muestra_Probeta_Temp
-column_f = df.columns[5]       # Tubo
+columns_traccion = df.columns[7:20]   # H to T
+columns_dureza = df.columns[22:30]    # W to AD
+columns_charpy = df.columns[33:44]    # AH to AR
+
+column_a = df.columns[0]              # Tipo_Acero_Limpio
+column_e = df.columns[4]              # Muestra_Probeta_Temp
+column_f = df.columns[5]              # Tubo
 
 # Extract Temp (number after second '-')
 df['Temp'] = df[column_e].str.extract(r'-(?:[^-]*)-(\d+)').astype(float)
@@ -26,6 +29,17 @@ selected_tipo = st.sidebar.multiselect("Select Tipo_Acero_Limpio", sorted(df[col
 # Dynamically get Tubo options based on selected Tipo_Acero_Limpio
 filtered_df_for_tubos = df[df[column_a].isin(selected_tipo)] if selected_tipo else df
 selected_tubo = st.sidebar.multiselect("Select Tubo", sorted(filtered_df_for_tubos[column_f].dropna().unique()), sorted(filtered_df_for_tubos[column_f].dropna().unique()))
+
+# Select test type
+test_type = st.sidebar.selectbox("Select Test Type", ["Traccion", "Dureza", "Charpy"])
+
+# Map test type to columns
+if test_type == "Traccion":
+    selected_columns = columns_traccion
+elif test_type == "Dureza":
+    selected_columns = columns_dureza
+elif test_type == "Charpy":
+    selected_columns = columns_charpy
 
 # Apply filters
 df_filtered = df.copy()
@@ -43,7 +57,7 @@ else:
     # Prepare long-format dataframe
     long_df = df_filtered.melt(
         id_vars=[column_a, column_e, 'Temp', column_f],
-        value_vars=columns_ht,
+        value_vars=selected_columns,
         var_name='Measurement',
         value_name='Value'
     ).dropna(subset=['Value', 'Temp'])
@@ -60,7 +74,7 @@ else:
         color='Legend',
         line_dash='LineStyle',
         markers=True,
-        title="CR - Tracción",
+        title=f"CR - {test_type}",
         labels={'Temp': 'Temp', 'Value': 'Value'}
     )
 
