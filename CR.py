@@ -18,7 +18,6 @@ column_a = df.columns[0]              # Tipo_Acero_Limpio
 column_e = df.columns[4]              # Muestra_Probeta_Temp
 column_f = df.columns[5]              # Tubo
 
-
 # Extract Temp (number after second '-')
 df['Temp'] = df[column_e].str.extract(r'-(?:[^-]*)-(\d+)').astype(float)
 
@@ -44,14 +43,11 @@ elif test_type == "Charpy":
 
 # Apply filters
 df_filtered = df.copy()
-
 if selected_tipo:
     df_filtered = df_filtered[df_filtered[column_a].isin(selected_tipo)]
-
 if selected_soaking:
     df_filtered = df_filtered[df_filtered[column_f].isin(selected_soaking)]
 
-# Check if there's data left
 if df_filtered.empty:
     st.warning("⚠ No data available for the selected filters.")
 else:
@@ -63,8 +59,27 @@ else:
         value_name='Value'
     ).dropna(subset=['Value', 'Temp'])
 
-    # Add line style and legend name
-    long_df['LineStyle'] = long_df['Measurement'].apply(lambda x: 'dash' if 'Req' in x else 'solid')
+    # Assign color and line style
+    def assign_color(measurement):
+        if "Fluencia" in measurement:
+            return '#CC0066'
+        elif "Rotura" in measurement:
+            return '#00009A'
+        elif "Alarg" in measurement:
+            return '#009900'
+        else:
+            return '#999999'  # fallback gray
+
+    def assign_dash(measurement):
+        if "Req" in measurement and "Max" in measurement:
+            return 'dash'
+        elif "Req" in measurement and "Min" in measurement:
+            return 'dot'
+        else:
+            return 'solid'
+
+    long_df['ColorGroup'] = long_df['Measurement'].apply(assign_color)
+    long_df['LineDash'] = long_df['Measurement'].apply(assign_dash)
     long_df['Legend'] = long_df['Measurement'] + ' (Soaking ' + long_df[column_f].astype(str) + ')'
 
     # Plot with Plotly
@@ -73,7 +88,8 @@ else:
         x='Temp',
         y='Value',
         color='Legend',
-        line_dash='LineStyle',  # ✅ actually controls line style now!
+        line_dash='LineDash',
+        color_discrete_map={lg: cg for lg, cg in zip(long_df['Legend'], long_df['ColorGroup'])},
         markers=True,
         title=f"CR - {test_type}",
         labels={'Temp': 'Temp', 'Value': 'Value'}
