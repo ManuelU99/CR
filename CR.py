@@ -17,6 +17,7 @@ columns_charpy = df.columns[33:44]    # AH to AR
 column_a = df.columns[0]              # Tipo_Acero_Limpio
 column_e = df.columns[4]              # Muestra_Probeta_Temp
 column_f = df.columns[5]              # Tubo
+column_g = df.columns[6]              # Soaking
 
 # Extract Temp (number after second '-')
 df['Temp'] = df[column_e].str.extract(r'-(?:[^-]*)-(\d+)').astype(float)
@@ -26,9 +27,9 @@ st.sidebar.header("Filters")
 
 selected_tipo = st.sidebar.multiselect("Select Tipo_Acero_Limpio", sorted(df[column_a].dropna().unique()), sorted(df[column_a].dropna().unique()))
 
-# Dynamically get Tubo options based on selected Tipo_Acero_Limpio
-filtered_df_for_tubos = df[df[column_a].isin(selected_tipo)] if selected_tipo else df
-selected_tubo = st.sidebar.multiselect("Select Tubo", sorted(filtered_df_for_tubos[column_f].dropna().unique()), sorted(filtered_df_for_tubos[column_f].dropna().unique()))
+# Dynamically get Soaking options based on selected Tipo_Acero_Limpio
+filtered_df_for_soaking = df[df[column_a].isin(selected_tipo)] if selected_tipo else df
+selected_soaking = st.sidebar.multiselect("Select Soaking", sorted(filtered_df_for_soaking[column_g].dropna().unique()), sorted(filtered_df_for_soaking[column_g].dropna().unique()))
 
 # Select test type
 test_type = st.sidebar.selectbox("Select Test Type", ["Traccion", "Dureza", "Charpy"])
@@ -47,8 +48,8 @@ df_filtered = df.copy()
 if selected_tipo:
     df_filtered = df_filtered[df_filtered[column_a].isin(selected_tipo)]
 
-if selected_tubo:
-    df_filtered = df_filtered[df_filtered[column_f].isin(selected_tubo)]
+if selected_soaking:
+    df_filtered = df_filtered[df_filtered[column_g].isin(selected_soaking)]
 
 # Check if there's data left
 if df_filtered.empty:
@@ -56,7 +57,7 @@ if df_filtered.empty:
 else:
     # Prepare long-format dataframe
     long_df = df_filtered.melt(
-        id_vars=[column_a, column_e, 'Temp', column_f],
+        id_vars=[column_a, column_e, 'Temp', column_g],
         value_vars=selected_columns,
         var_name='Measurement',
         value_name='Value'
@@ -64,7 +65,7 @@ else:
 
     # Add line style and legend name
     long_df['LineStyle'] = long_df['Measurement'].apply(lambda x: 'dash' if 'Req' in x else 'solid')
-    long_df['Legend'] = long_df['Measurement'] + ' (Tubo ' + long_df[column_f].astype(str) + ')'
+    long_df['Legend'] = long_df['Measurement'] + ' (Soaking ' + long_df[column_g].astype(str) + ')'
 
     # Plot with Plotly
     fig = px.line(
@@ -72,7 +73,7 @@ else:
         x='Temp',
         y='Value',
         color='Legend',
-        line_dash='LineStyle',
+        line_dash='LineStyle',  # ✅ actually controls line style now!
         markers=True,
         title=f"CR - {test_type}",
         labels={'Temp': 'Temp', 'Value': 'Value'}
