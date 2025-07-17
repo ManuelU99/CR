@@ -1,9 +1,10 @@
 import pandas as pd
 import plotly.express as px
 import streamlit as st
+import unicodedata
 
 # Set page config
-st.set_page_config(page_title="CR Dashboard 🚀", layout="wide")
+st.set_page_config(page_title="Dashboard - Curvas de Revenido", layout="wide")
 
 # Load data
 file_path = "data_bi_CR.csv"
@@ -55,48 +56,41 @@ else:
         value_name='Value'
     ).dropna(subset=['Value', 'Temp'])
 
-    # Assign color and dash style
+    # Normalize text (lowercase, remove accents)
+    def normalize(text):
+        text = text.lower()
+        text = unicodedata.normalize('NFKD', text).encode('ASCII', 'ignore').decode('utf-8')
+        return text
+
+    # Assign color
     def assign_color(m):
-        # Traccion group
-        if "Fluencia" in m:
+        m_norm = normalize(m)
+        if "fluencia" in m_norm:
             return '#CC0066'
-        if "Rotura" in m:
+        if "rotura" in m_norm:
             return '#00009A'
-        if "Alarg" in m:
+        if "alarg" in m_norm:
             return '#009900'
-        # Dureza group
-        if "Dureza" in m and "Ind" in m and "Max" in m and "Req" not in m:
+        if "dureza" in m_norm and "ind" in m_norm and "max" in m_norm:
             return '#CC0066'
-        if "Dureza" in m and "Ind" in m and "Min" in m and "Req" not in m:
+        if "dureza" in m_norm and "ind" in m_norm and "min" in m_norm:
             return '#EC36E0'
-        if "Dureza" in m and "Ind" in m and "Max" in m and "Req" in m:
-            return '#CC0066'
-        if "Dureza" in m and "Ind" in m and "Min" in m and "Req" in m:
-            return '#CC0066'
-        if "Dureza" in m and "Prom" in m and "Max" in m and "Req" not in m:
+        if "dureza" in m_norm and "prom" in m_norm and "max" in m_norm:
             return '#00009A'
-        if "Dureza" in m and "Prom" in m and "Min" in m and "Req" not in m:
+        if "dureza" in m_norm and "prom" in m_norm and "min" in m_norm:
             return '#1F7CC7'
-        if "Dureza" in m and "Prom" in m and "Max" in m and "Req" in m:
-            return '#00009A'
-        if "Dureza" in m and "Prom" in m and "Min" in m and "Req" in m:
-            return '#00009A'
-        # Charpy group
-        if "Energ" in m and "Ind" in m and "Min" in m:
+        if "energ" in m_norm:
             return '#CC0066'
-        if "Energ" in m and "Prom" in m and "Min" in m:
-            return '#00009A'
-        if "Area" in m and "Ind" in m and "Min" in m:
+        if "area" in m_norm:
             return '#009900'
-        if "Area" in m and "Prom" in m and "Min" in m:
-            return '#252423'
-        # fallback
         return '#999999'
 
+    # Assign dash
     def assign_dash(m):
-        if "Req" in m and "Max" in m:
+        m_norm = normalize(m)
+        if "req" in m_norm and "max" in m_norm:
             return 'dash'
-        if "Req" in m and "Min" in m:
+        if "req" in m_norm and "min" in m_norm:
             return 'dot'
         else:
             return 'solid'
@@ -117,7 +111,7 @@ else:
         line_dash='LineDash',
         color_discrete_map=color_discrete_map,
         markers=True,
-        title=f"CR - {test_type}",
+        title=f"Dashboard - Curvas de Revenido: {test_type}",
         labels={'Temp': 'Temp', 'Value': 'Value'}
     )
 
