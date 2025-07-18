@@ -102,11 +102,11 @@ else:
         has_max = "max" in m_norm
         has_min = "min" in m_norm
         if has_req and has_max:
-            return 'dash'
+            return 'solid'
         elif has_req and has_min:
             return 'dot'
         else:
-            return 'solid'
+            return 'dash'
 
 
     # Clean Measurement (remove '(merged)' if present)
