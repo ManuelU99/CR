@@ -72,11 +72,11 @@ else:
         if "dureza" in m_norm and "ind" in m_norm and "max" in m_norm:
             return '#CC0066'
         if "dureza" in m_norm and "ind" in m_norm and "min" in m_norm:
-            return "#FF0040"
+            return '#EC36E0'
         if "dureza" in m_norm and "prom" in m_norm and "max" in m_norm:
             return '#00009A'
         if "dureza" in m_norm and "prom" in m_norm and "min" in m_norm:
-            return "#3737E7"
+            return '#1F7CC7'
         if "energ" in m_norm and "ind" in m_norm:
             return '#CC0066'
         if "energ" in m_norm and "prom" in m_norm:
@@ -84,8 +84,8 @@ else:
         if "area" in m_norm and "ind" in m_norm:
             return '#009900'
         if "area" in m_norm and "prom" in m_norm:
-            return "#000000"
-        return "#999999"
+            return '#009900'
+        return '#999999'
 
     def assign_dash(m):
         m_norm = normalize(m)
@@ -107,11 +107,9 @@ else:
     fig = go.Figure()
 
     for (legend, color, dash), group in long_df.groupby(['Legend', 'ColorHex', 'LineDash']):
-        # Check if 'req' is in normalized legend
         legend_norm = normalize(legend)
-        show_text = None
-        if 'req' not in legend_norm:
-            show_text = group['Value']
+        show_text = group['Value'] if 'req' not in legend_norm else None
+        use_yaxis = 'y2' if 'alarg' in legend_norm else 'y'
 
         fig.add_trace(go.Scatter(
             x=group['Temp'],
@@ -119,6 +117,7 @@ else:
             mode='lines+markers+text' if show_text is not None else 'lines+markers',
             name=legend,
             line=dict(color=color, dash=dash),
+            yaxis=use_yaxis,
             text=show_text,
             textposition='top center',
             hovertemplate=f'<b>{legend}</b><br>Temp=%{{x}}<br>Value=%{{y}}<extra></extra>'
@@ -127,7 +126,8 @@ else:
     fig.update_layout(
         title=f"Dashboard - Curvas de Revenido: {test_type}",
         xaxis_title='Temp',
-        yaxis_title='Value',
+        yaxis=dict(title='Value'),
+        yaxis2=dict(title='Alarg Value', overlaying='y', side='right'),
         xaxis=dict(tickangle=0),
         legend_title='Series',
         height=700,
