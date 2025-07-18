@@ -72,11 +72,11 @@ else:
         if "dureza" in m_norm and "ind" in m_norm and "max" in m_norm:
             return '#CC0066'
         if "dureza" in m_norm and "ind" in m_norm and "min" in m_norm:
-            return '#EC36E0'
+            return "#CA3A82"
         if "dureza" in m_norm and "prom" in m_norm and "max" in m_norm:
             return '#00009A'
         if "dureza" in m_norm and "prom" in m_norm and "min" in m_norm:
-            return '#1F7CC7'
+            return "#3737E7"
         if "energ" in m_norm and "ind" in m_norm:
             return '#CC0066'
         if "energ" in m_norm and "prom" in m_norm:
@@ -84,8 +84,8 @@ else:
         if "area" in m_norm and "ind" in m_norm:
             return '#009900'
         if "area" in m_norm and "prom" in m_norm:
-            return '#009900'
-        return "#000000"
+            return "#000000"
+        return "#999999"
 
     def assign_dash(m):
         m_norm = normalize(m)
