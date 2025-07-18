@@ -104,9 +104,9 @@ else:
         if has_req and has_max:
             return 'solid'
         elif has_req and has_min:
-            return 'dot'
+            return 'solid'
         else:
-            return 'dash'
+            return 'solid'
 
 
     # Clean Measurement (remove '(merged)' if present)
