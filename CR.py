@@ -98,12 +98,16 @@ else:
     # Assign dash
     def assign_dash(m):
         m_norm = normalize(m)
-        if "req" in m_norm and "max" in m_norm:
+        has_req = "req" in m_norm
+        has_max = "max" in m_norm
+        has_min = "min" in m_norm
+        if has_req and has_max:
             return 'dash'
-        if "req" in m_norm and "min" in m_norm:
+        if has_req and has_min:
             return 'dot'
-        else:
+        if (has_max or has_min) and not has_req:
             return 'solid'
+        return 'solid'
 
     # Clean Measurement (remove '(merged)' if present)
     long_df['MeasurementClean'] = long_df['Measurement'].str.replace(r'\(merged\)', '', regex=True).str.strip()
@@ -127,13 +131,18 @@ else:
         labels={'Temp': 'Temp', 'Value': 'Value'}
     )
 
-    # Update layout: enable unified hover, remove line type in tooltip
+    # Update layout: unified hover, custom tooltip
     fig.update_layout(
         xaxis=dict(tickangle=0),
         legend_title='Series',
         height=700,
         width=1200,
         hovermode='x unified'
+    )
+
+    # Custom hovertemplate: no LineDash, no extra trace info
+    fig.update_traces(
+        hovertemplate='<b>%{fullData.name}</b><br>Temp=%{x}<br>Value=%{y}<extra></extra>'
     )
 
     st.plotly_chart(fig, use_container_width=True)
