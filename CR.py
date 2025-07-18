@@ -72,7 +72,7 @@ else:
         if "dureza" in m_norm and "ind" in m_norm and "max" in m_norm:
             return '#CC0066'
         if "dureza" in m_norm and "ind" in m_norm and "min" in m_norm:
-            return "#CA3A82"
+            return "#FF0040"
         if "dureza" in m_norm and "prom" in m_norm and "max" in m_norm:
             return '#00009A'
         if "dureza" in m_norm and "prom" in m_norm and "min" in m_norm:
