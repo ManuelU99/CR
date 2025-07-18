@@ -26,17 +26,17 @@ df['Temp'] = df[column_e].str.extract(r'-(?:[^-]*)-(\d+)').astype(float)
 # Sidebar filters
 st.sidebar.header("Filters")
 
-# --- Smart filter step 1: Tipo_Acero_Limpio ---
+# Smart filter 1: Tipo_Acero_Limpio
 all_tipo = sorted(df[column_a].dropna().unique())
 selected_tipo = st.sidebar.multiselect("Select Tipo_Acero_Limpio", all_tipo, default=all_tipo)
 df_filtered = df[df[column_a].isin(selected_tipo)]
 
-# --- Smart filter step 2: Ciclo ---
+# Smart filter 2: Ciclo
 all_ciclos = sorted(df_filtered[column_c].dropna().unique())
 selected_ciclo = st.sidebar.multiselect("Select Ciclo", all_ciclos, default=all_ciclos)
 df_filtered = df_filtered[df_filtered[column_c].isin(selected_ciclo)]
 
-# --- Smart filter step 3: Soaking ---
+# Smart filter 3: Soaking
 all_soaking = sorted(df_filtered[column_f].dropna().unique())
 selected_soaking = st.sidebar.multiselect("Select Soaking", all_soaking, default=all_soaking)
 df_filtered = df_filtered[df_filtered[column_f].isin(selected_soaking)]
@@ -105,9 +105,11 @@ else:
         else:
             return 'solid'
 
+    # Clean Measurement (remove '(merged)' if present)
+    long_df['MeasurementClean'] = long_df['Measurement'].str.replace(r'\(merged\)', '', regex=True).str.strip()
     long_df['ColorHex'] = long_df['Measurement'].apply(assign_color)
     long_df['LineDash'] = long_df['Measurement'].apply(assign_dash)
-    long_df['Legend'] = long_df['Measurement'] + ' (Soaking ' + long_df[column_f].astype(str) + ')'
+    long_df['Legend'] = long_df['MeasurementClean'] + ' (Soaking ' + long_df[column_f].astype(str) + ')'
 
     # Create color map per unique Legend
     color_discrete_map = dict(zip(long_df['Legend'], long_df['ColorHex']))
@@ -125,6 +127,7 @@ else:
         labels={'Temp': 'Temp', 'Value': 'Value'}
     )
 
+    # Update layout: enable unified hover, remove line type in tooltip
     fig.update_layout(
         xaxis=dict(tickangle=0),
         legend_title='Series',
@@ -132,7 +135,6 @@ else:
         width=1200,
         hovermode='x unified'
     )
-
 
     st.plotly_chart(fig, use_container_width=True)
 
