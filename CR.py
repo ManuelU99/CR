@@ -27,22 +27,25 @@ df['Temp'] = df[column_e].str.extract(r'-(?:[^-]*)-(\d+)').astype(float).round()
 # Add RowNumber to preserve original file order
 df['RowNumber'] = df.reset_index().index
 
-# Sort by RowNumber to keep order as in file
+# Sort by order to preserve sequence
 df.sort_values(['RowNumber'], inplace=True)
 
-# Initialize BlockID detection
-df['BlockID'] = 1
-current_block = 1
-seen_pairs = set()
+# Create Key: Muestra-Temp
+df['MuestraTempKey'] = df['Muestra'].astype(str) + '-' + df['Temp'].astype(int).astype(str)
+
+# Assign GroupNumber based on repetition order
+key_counts = {}
+group_numbers = []
 
 for idx, row in df.iterrows():
-    pair = (row['Muestra'], row['Temp'])
-    if pair in seen_pairs:
-        # When we encounter a repeated Muestra-Temp → start a new block
-        current_block += 1
-        seen_pairs = set()
-    seen_pairs.add(pair)
-    df.at[idx, 'BlockID'] = current_block
+    key = row['MuestraTempKey']
+    if key not in key_counts:
+        key_counts[key] = 1
+    else:
+        key_counts[key] += 1
+    group_numbers.append(key_counts[key])
+
+df['GroupNumber'] = group_numbers
 
 # Sidebar filters
 st.sidebar.header("Filters")
@@ -58,9 +61,11 @@ all_soaking = sorted(df_filtered[column_f].dropna().unique())
 selected_soaking = st.sidebar.multiselect("Select Soaking", all_soaking, default=all_soaking)
 df_filtered = df_filtered[df_filtered[column_f].isin(selected_soaking)]
 
-all_blocks = sorted(df_filtered['BlockID'].unique())
-selected_blocks = st.sidebar.multiselect("Select Block (Run)", all_blocks, default=all_blocks)
-df_filtered = df_filtered[df_filtered['BlockID'].isin(selected_blocks)]
+all_groups = sorted(df_filtered['GroupNumber'].unique())
+selected_groups = st.sidebar.multiselect(
+    "Select Group Number (1, 2, ...)", all_groups, default=all_groups
+)
+df_filtered = df_filtered[df_filtered['GroupNumber'].isin(selected_groups)]
 
 test_type = st.sidebar.selectbox("Select Test Type", ["Traccion", "Dureza", "Charpy"])
 
@@ -75,7 +80,7 @@ if df_filtered.empty:
     st.warning("⚠ No data available for the selected filters.")
 else:
     long_df = df_filtered.melt(
-        id_vars=[column_a, column_c, column_e, column_f, 'Temp', 'Muestra', 'BlockID'],
+        id_vars=[column_a, column_c, column_e, column_f, 'Temp', 'Muestra', 'GroupNumber'],
         value_vars=selected_columns,
         var_name='Measurement',
         value_name='Value'
@@ -145,11 +150,11 @@ else:
             textposition='top center',
             hovertemplate=(
                 f"<b>{legend}</b><br>"
-                f"Muestra: %{{customdata[0]}} (Block %{{customdata[1]}})<br>"
+                f"Muestra: %{{customdata[0]}} (Group %{{customdata[1]}})<br>"
                 f"Temp: %{{x}}<br>"
                 f"Value: %{{y}}<extra></extra>"
             ),
-            customdata=group[['Muestra', 'BlockID']].values
+            customdata=group[['Muestra', 'GroupNumber']].values
         ))
 
     fig.update_layout(
