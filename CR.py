@@ -16,6 +16,7 @@ columns_dureza = df.columns[22:30]     # W to AD
 columns_charpy = df.columns[33:44]     # AH to AR
 
 column_a = df.columns[0]               # Tipo_Acero_Limpio
+column_c = df.columns[2]               # Ciclo
 column_e = df.columns[4]               # Muestra_Probeta_Temp
 column_f = df.columns[5]               # Tubo
 
@@ -25,6 +26,7 @@ df['Temp'] = df[column_e].str.extract(r'-(?:[^-]*)-(\d+)').astype(float)
 # Sidebar filters
 st.sidebar.header("Filters")
 selected_tipo = st.sidebar.multiselect("Select Tipo_Acero_Limpio", sorted(df[column_a].dropna().unique()), sorted(df[column_a].dropna().unique()))
+selected_ciclo = st.sidebar.multiselect("Select Ciclo", sorted(df[column_c].dropna().unique()), sorted(df[column_c].dropna().unique()))
 filtered_df_for_soaking = df[df[column_a].isin(selected_tipo)] if selected_tipo else df
 selected_soaking = st.sidebar.multiselect("Select Soaking", sorted(filtered_df_for_soaking[column_f].dropna().unique()), sorted(filtered_df_for_soaking[column_f].dropna().unique()))
 
@@ -43,8 +45,11 @@ elif test_type == "Charpy":
 df_filtered = df.copy()
 if selected_tipo:
     df_filtered = df_filtered[df_filtered[column_a].isin(selected_tipo)]
+if selected_ciclo:
+    df_filtered = df_filtered[df_filtered[column_c].isin(selected_ciclo)]
 if selected_soaking:
     df_filtered = df_filtered[df_filtered[column_f].isin(selected_soaking)]
+
 
 if df_filtered.empty:
     st.warning("⚠ No data available for the selected filters.")
