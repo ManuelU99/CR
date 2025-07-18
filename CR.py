@@ -104,7 +104,7 @@ else:
         if has_req and has_max:
             return 'solid'
         elif has_req and has_min:
-            return 'solid'
+            return 'dash'
         else:
             return 'solid'
 
