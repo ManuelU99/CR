@@ -3,14 +3,14 @@ import plotly.graph_objects as go
 import streamlit as st
 import unicodedata
 
-# Streamlit page config
+# Streamlit config
 st.set_page_config(page_title="Dashboard - Curvas de Revenido", layout="wide")
 
 # Load data
 file_path = "data_bi_CR.csv"
 df = pd.read_csv(file_path)
 
-# Define key columns
+# Define columns
 column_a = df.columns[0]  # Tipo_Acero_Limpio
 column_b = df.columns[1]  # Grado_Acero
 column_c = df.columns[2]  # Ciclo
@@ -28,13 +28,14 @@ df['Muestra'] = split_cols[0]
 df['Probeta'] = split_cols[1]
 df['Temp'] = split_cols[2].astype(float).round()
 
-# Initialize selected filters (start with full DataFrame)
+# Sidebar filters (initial options from full df)
+st.sidebar.header("Filters")
 selected_familia = st.sidebar.multiselect("Select Familia", sorted(df[column_d].dropna().unique()))
 selected_tipo = st.sidebar.multiselect("Select Tipo_Acero_Limpio", sorted(df[column_a].dropna().unique()))
 selected_ciclo = st.sidebar.multiselect("Select Ciclo", sorted(df[column_c].dropna().unique()))
 selected_soaking = st.sidebar.multiselect("Select Soaking", sorted(df[column_f].dropna().unique()))
 
-# Apply all filters at once (dynamic, bidirectional)
+# Apply selected filters
 df_filtered = df.copy()
 if selected_familia:
     df_filtered = df_filtered[df_filtered[column_d].isin(selected_familia)]
@@ -45,13 +46,13 @@ if selected_ciclo:
 if selected_soaking:
     df_filtered = df_filtered[df_filtered[column_f].isin(selected_soaking)]
 
-# Update the available options AFTER filtering (so each dropdown updates dynamically)
-available_familia = sorted(df[df[column_a].isin(df_filtered[column_a]) & df[column_c].isin(df_filtered[column_c]) & df[column_f].isin(df_filtered[column_f])][column_d].dropna().unique())
-available_tipo = sorted(df[df[column_d].isin(df_filtered[column_d]) & df[column_c].isin(df_filtered[column_c]) & df[column_f].isin(df_filtered[column_f])][column_a].dropna().unique())
-available_ciclo = sorted(df[df[column_d].isin(df_filtered[column_d]) & df[column_a].isin(df_filtered[column_a]) & df[column_f].isin(df_filtered[column_f])][column_c].dropna().unique())
-available_soaking = sorted(df[df[column_d].isin(df_filtered[column_d]) & df[column_a].isin(df_filtered[column_a]) & df[column_c].isin(df_filtered[column_c])][column_f].dropna().unique())
+# Recalculate available options dynamically (Power BI style!)
+available_familia = sorted(df_filtered[column_d].dropna().unique())
+available_tipo = sorted(df_filtered[column_a].dropna().unique())
+available_ciclo = sorted(df_filtered[column_c].dropna().unique())
+available_soaking = sorted(df_filtered[column_f].dropna().unique())
 
-# Reset selections if no data remains
+# Reset filters if selection causes empty set (avoid breaking)
 if not available_familia:
     selected_familia = []
 if not available_tipo:
@@ -69,7 +70,7 @@ selected_columns = (
     else columns_charpy
 )
 
-# Plotting
+# Check and plot
 if df_filtered.empty:
     st.warning("⚠ No data available for the selected filters.")
 else:
@@ -128,11 +129,13 @@ else:
     long_df['LineDash'] = long_df['Measurement'].apply(assign_dash)
     long_df['Legend'] = long_df['MeasurementClean'] + ' (Soaking ' + long_df[column_f].astype(str) + ')'
 
+    show_labels = len(long_df) <= 100
+
     fig = go.Figure()
 
     for (legend, color, dash), group in long_df.groupby(['Legend', 'ColorHex', 'LineDash']):
         legend_norm = normalize(legend)
-        show_text = group['Value'] if 'req' not in legend_norm else None
+        show_text = group['Value'] if ('req' not in legend_norm and show_labels) else None
 
         fig.add_trace(go.Scatter(
             x=group['Temp'],
