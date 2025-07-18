@@ -1,5 +1,5 @@
 import pandas as pd
-import plotly.express as px
+import plotly.graph_objects as go
 import streamlit as st
 import unicodedata
 
@@ -11,42 +11,34 @@ file_path = "data_bi_CR.csv"
 df = pd.read_csv(file_path)
 
 # Define key columns
-columns_traccion = df.columns[7:20]    # H to T
-columns_dureza = df.columns[22:30]     # W to AD
-columns_charpy = df.columns[33:44]     # AH to AR
+columns_traccion = df.columns[7:20]
+columns_dureza = df.columns[22:30]
+columns_charpy = df.columns[33:44]
 
-column_a = df.columns[0]               # Tipo_Acero_Limpio
-column_c = df.columns[2]               # Ciclo
-column_e = df.columns[4]               # Muestra_Probeta_Temp
-column_f = df.columns[5]               # Tubo
+column_a = df.columns[0]
+column_c = df.columns[2]
+column_e = df.columns[4]
+column_f = df.columns[5]
 
 # Extract Temp (number after second '-')
-df['Temp'] = df[column_e].str.extract(r'-(?:[^-]*)-(\d+)').astype(float)
-df['Temp'] = df['Temp'].round()
-
+df['Temp'] = df[column_e].str.extract(r'-(?:[^-]*)-(\d+)').astype(float).round()
 
 # Sidebar filters
 st.sidebar.header("Filters")
-
-# Smart filter 1: Tipo_Acero_Limpio
 all_tipo = sorted(df[column_a].dropna().unique())
 selected_tipo = st.sidebar.multiselect("Select Tipo_Acero_Limpio", all_tipo, default=all_tipo)
 df_filtered = df[df[column_a].isin(selected_tipo)]
 
-# Smart filter 2: Ciclo
 all_ciclos = sorted(df_filtered[column_c].dropna().unique())
 selected_ciclo = st.sidebar.multiselect("Select Ciclo", all_ciclos, default=all_ciclos)
 df_filtered = df_filtered[df_filtered[column_c].isin(selected_ciclo)]
 
-# Smart filter 3: Soaking
 all_soaking = sorted(df_filtered[column_f].dropna().unique())
 selected_soaking = st.sidebar.multiselect("Select Soaking", all_soaking, default=all_soaking)
 df_filtered = df_filtered[df_filtered[column_f].isin(selected_soaking)]
 
-# Select test type
 test_type = st.sidebar.selectbox("Select Test Type", ["Traccion", "Dureza", "Charpy"])
 
-# Map test type to columns
 if test_type == "Traccion":
     selected_columns = columns_traccion
 elif test_type == "Dureza":
@@ -64,13 +56,11 @@ else:
         value_name='Value'
     ).dropna(subset=['Value', 'Temp'])
 
-    # Normalize text (lowercase, remove accents)
     def normalize(text):
         text = text.lower()
         text = unicodedata.normalize('NFKD', text).encode('ASCII', 'ignore').decode('utf-8')
         return text
 
-    # Assign color
     def assign_color(m):
         m_norm = normalize(m)
         if "fluencia" in m_norm:
@@ -97,54 +87,42 @@ else:
             return '#009900'
         return '#999999'
 
-    # Improved dash assignment (robust for Req + Max/Mín with accents)
     def assign_dash(m):
         m_norm = normalize(m)
         has_req = "req" in m_norm
         has_max = "max" in m_norm or "máx" in m_norm
         has_min = "min" in m_norm or "mín" in m_norm
-
         if has_req and has_max:
             return 'dash'
         elif has_req and has_min:
-            return 'dash'
-        else:
             return 'dot'
+        else:
+            return 'solid'
 
-    # Clean Measurement (remove '(merged)' if present)
     long_df['MeasurementClean'] = long_df['Measurement'].str.replace(r'\(merged\)', '', regex=True).str.strip()
     long_df['ColorHex'] = long_df['Measurement'].apply(assign_color)
     long_df['LineDash'] = long_df['Measurement'].apply(assign_dash)
+    long_df['Legend'] = long_df['MeasurementClean'] + ' (Soaking ' + long_df[column_f].astype(str) + ')'
 
-    # Combine Legend + LineDash internally (for Plotly series separation)
-    long_df['LegendUnique'] = long_df['MeasurementClean'] + ' (Soaking ' + long_df[column_f].astype(str) + ')'
-    long_df['LegendUniqueDash'] = long_df['LegendUnique'] + ' [' + long_df['LineDash'] + ']'  # only for backend
+    # Build Plotly Figure
+    fig = go.Figure()
 
-    # Create color map per unique LegendUniqueDash
-    color_discrete_map = dict(zip(long_df['LegendUniqueDash'], long_df['ColorHex']))
-    legend_name_map = dict(zip(long_df['LegendUniqueDash'], long_df['LegendUnique']))  # clean legend
-
-    # Plot
-    fig = px.line(
-        long_df,
-        x='Temp',
-        y='Value',
-        color='LegendUniqueDash',
-        line_dash='LineDash',
-        color_discrete_map=color_discrete_map,
-        markers=True,
-        title=f"Dashboard - Curvas de Revenido: {test_type}",
-        labels={'Temp': 'Temp', 'Value': 'Value'}
-    )
-
-    # Update traces: overwrite legend names (remove dash info) + hovertemplate
-    fig.for_each_trace(lambda t: t.update(
-        name=legend_name_map.get(t.name, t.name),
-        hovertemplate='<b>%{fullData.name}</b><br>Temp=%{x}<br>Value=%{y}<extra></extra>'
-    ))
+    # Add one trace per unique series
+    for (legend, color, dash), group in long_df.groupby(['Legend', 'ColorHex', 'LineDash']):
+        fig.add_trace(go.Scatter(
+            x=group['Temp'],
+            y=group['Value'],
+            mode='lines+markers',
+            name=legend,
+            line=dict(color=color, dash=dash),
+            hovertemplate=f'<b>{legend}</b><br>Temp=%{{x}}<br>Value=%{{y}}<extra></extra>'
+        ))
 
     # Update layout
     fig.update_layout(
+        title=f"Dashboard - Curvas de Revenido: {test_type}",
+        xaxis_title='Temp',
+        yaxis_title='Value',
         xaxis=dict(tickangle=0),
         legend_title='Series',
         height=700,
