@@ -3,14 +3,14 @@ import plotly.graph_objects as go
 import streamlit as st
 import unicodedata
 
-# Config
+# Streamlit page config
 st.set_page_config(page_title="Dashboard - Curvas de Revenido", layout="wide")
 
 # Load data
 file_path = "data_bi_CR.csv"
 df = pd.read_csv(file_path)
 
-# Key columns
+# Define key columns
 column_a = df.columns[0]  # Tipo_Acero_Limpio
 column_b = df.columns[1]  # Grado_Acero
 column_c = df.columns[2]  # Ciclo
@@ -28,16 +28,13 @@ df['Muestra'] = split_cols[0]
 df['Probeta'] = split_cols[1]
 df['Temp'] = split_cols[2].astype(float).round()
 
-# Sidebar
-st.sidebar.header("Filters")
-
-# Initialize selected values from sidebar (start with full dataset)
+# Initialize selected filters (start with full DataFrame)
 selected_familia = st.sidebar.multiselect("Select Familia", sorted(df[column_d].dropna().unique()))
 selected_tipo = st.sidebar.multiselect("Select Tipo_Acero_Limpio", sorted(df[column_a].dropna().unique()))
 selected_ciclo = st.sidebar.multiselect("Select Ciclo", sorted(df[column_c].dropna().unique()))
 selected_soaking = st.sidebar.multiselect("Select Soaking", sorted(df[column_f].dropna().unique()))
 
-# Filter step 1: apply all selected filters together
+# Apply all filters at once (dynamic, bidirectional)
 df_filtered = df.copy()
 if selected_familia:
     df_filtered = df_filtered[df_filtered[column_d].isin(selected_familia)]
@@ -48,18 +45,21 @@ if selected_ciclo:
 if selected_soaking:
     df_filtered = df_filtered[df_filtered[column_f].isin(selected_soaking)]
 
-# Step 2: recalculate options dynamically from filtered data
-all_familia = sorted(df_filtered[column_d].dropna().unique())
-all_tipo = sorted(df_filtered[column_a].dropna().unique())
-all_ciclos = sorted(df_filtered[column_c].dropna().unique())
-all_soaking = sorted(df_filtered[column_f].dropna().unique())
+# Update the available options AFTER filtering (so each dropdown updates dynamically)
+available_familia = sorted(df[df[column_a].isin(df_filtered[column_a]) & df[column_c].isin(df_filtered[column_c]) & df[column_f].isin(df_filtered[column_f])][column_d].dropna().unique())
+available_tipo = sorted(df[df[column_d].isin(df_filtered[column_d]) & df[column_c].isin(df_filtered[column_c]) & df[column_f].isin(df_filtered[column_f])][column_a].dropna().unique())
+available_ciclo = sorted(df[df[column_d].isin(df_filtered[column_d]) & df[column_a].isin(df_filtered[column_a]) & df[column_f].isin(df_filtered[column_f])][column_c].dropna().unique())
+available_soaking = sorted(df[df[column_d].isin(df_filtered[column_d]) & df[column_a].isin(df_filtered[column_a]) & df[column_c].isin(df_filtered[column_c])][column_f].dropna().unique())
 
-# Update sidebar options live (show available options only)
-st.sidebar.markdown("**Available after filtering:**")
-st.sidebar.write(f"Familia: {all_familia}")
-st.sidebar.write(f"Tipo_Acero_Limpio: {all_tipo}")
-st.sidebar.write(f"Ciclo: {all_ciclos}")
-st.sidebar.write(f"Soaking: {all_soaking}")
+# Reset selections if no data remains
+if not available_familia:
+    selected_familia = []
+if not available_tipo:
+    selected_tipo = []
+if not available_ciclo:
+    selected_ciclo = []
+if not available_soaking:
+    selected_soaking = []
 
 # Select test type
 test_type = st.sidebar.selectbox("Select Test Type", ["Traccion", "Dureza", "Charpy"])
@@ -69,7 +69,7 @@ selected_columns = (
     else columns_charpy
 )
 
-# If no data, warn
+# Plotting
 if df_filtered.empty:
     st.warning("⚠ No data available for the selected filters.")
 else:
