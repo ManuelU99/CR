@@ -124,7 +124,7 @@ else:
         x='Temp',
         y='Value',
         color='Legend',
-        line_dash='LineDash',
+        #line_dash='LineDash',
         color_discrete_map=color_discrete_map,
         markers=True,
         title=f"Dashboard - Curvas de Revenido: {test_type}",
