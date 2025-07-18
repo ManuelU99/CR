@@ -104,7 +104,7 @@ else:
         if has_req:
             return 'dash'
         else:
-            return 'solid'
+            return 'dash'
 
 
     # Clean Measurement (remove '(merged)' if present)
