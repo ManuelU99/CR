@@ -127,7 +127,7 @@ else:
         legend_title='Series',
         height=700,
         width=1200,
-        hovermode='x'
+        hovermode='x unified'
     )
 
     st.plotly_chart(fig, use_container_width=True)
