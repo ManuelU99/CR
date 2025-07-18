@@ -105,9 +105,9 @@ else:
         if has_req and has_max:
             return 'dash'
         elif has_req and has_min:
-            return 'dot'
+            return 'dash'
         else:
-            return 'solid'
+            return 'dot'
 
     # Clean Measurement (remove '(merged)' if present)
     long_df['MeasurementClean'] = long_df['Measurement'].str.replace(r'\(merged\)', '', regex=True).str.strip()
