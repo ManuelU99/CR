@@ -27,25 +27,17 @@ df['Temp'] = df[column_e].str.extract(r'-(?:[^-]*)-(\d+)').astype(float).round()
 # Add RowNumber to preserve original file order
 df['RowNumber'] = df.reset_index().index
 
-# Sort by order to preserve sequence
-df.sort_values(['RowNumber'], inplace=True)
+# Sort by Tipo_Acero_Limpio, Temp, Muestra, RowNumber
+df.sort_values(['Tipo_Acero_Limpio', 'Temp', 'Muestra', 'RowNumber'], inplace=True)
 
-# Create Key: Muestra-Temp
+# Create key: Muestra-Temp
 df['MuestraTempKey'] = df['Muestra'].astype(str) + '-' + df['Temp'].astype(int).astype(str)
 
-# Assign GroupNumber based on repetition order
-key_counts = {}
-group_numbers = []
+# Assign repetition number per key
+df['PerKeyGroupNumber'] = df.groupby('MuestraTempKey').cumcount() + 1
 
-for idx, row in df.iterrows():
-    key = row['MuestraTempKey']
-    if key not in key_counts:
-        key_counts[key] = 1
-    else:
-        key_counts[key] += 1
-    group_numbers.append(key_counts[key])
-
-df['GroupNumber'] = group_numbers
+# Get global maximum group count (this gives how many total batches)
+max_group_number = df['PerKeyGroupNumber'].max()
 
 # Sidebar filters
 st.sidebar.header("Filters")
@@ -61,11 +53,14 @@ all_soaking = sorted(df_filtered[column_f].dropna().unique())
 selected_soaking = st.sidebar.multiselect("Select Soaking", all_soaking, default=all_soaking)
 df_filtered = df_filtered[df_filtered[column_f].isin(selected_soaking)]
 
-all_groups = sorted(df_filtered['GroupNumber'].unique())
+# Provide selection across the maximum global group numbers
+available_groups = list(range(1, max_group_number + 1))
 selected_groups = st.sidebar.multiselect(
-    "Select Group Number (1, 2, ...)", all_groups, default=all_groups
+    "Select Global Group Number (1 = first batch, etc.)", available_groups, default=available_groups
 )
-df_filtered = df_filtered[df_filtered['GroupNumber'].isin(selected_groups)]
+
+# Filter: keep only rows that are part of selected groups
+df_filtered = df_filtered[df_filtered['PerKeyGroupNumber'].isin(selected_groups)]
 
 test_type = st.sidebar.selectbox("Select Test Type", ["Traccion", "Dureza", "Charpy"])
 
@@ -80,7 +75,7 @@ if df_filtered.empty:
     st.warning("⚠ No data available for the selected filters.")
 else:
     long_df = df_filtered.melt(
-        id_vars=[column_a, column_c, column_e, column_f, 'Temp', 'Muestra', 'GroupNumber'],
+        id_vars=[column_a, column_c, column_e, column_f, 'Temp', 'Muestra', 'PerKeyGroupNumber'],
         value_vars=selected_columns,
         var_name='Measurement',
         value_name='Value'
@@ -154,7 +149,7 @@ else:
                 f"Temp: %{{x}}<br>"
                 f"Value: %{{y}}<extra></extra>"
             ),
-            customdata=group[['Muestra', 'GroupNumber']].values
+            customdata=group[['Muestra', 'PerKeyGroupNumber']].values
         ))
 
     fig.update_layout(
