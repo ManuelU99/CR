@@ -103,11 +103,11 @@ else:
         has_min = "min" in m_norm
         if has_req and has_max:
             return 'dash'
-        if has_req and has_min:
+        elif has_req and has_min:
             return 'dot'
-        if (has_max or has_min) and not has_req:
+        else:
             return 'solid'
-        return 'solid'
+
 
     # Clean Measurement (remove '(merged)' if present)
     long_df['MeasurementClean'] = long_df['Measurement'].str.replace(r'\(merged\)', '', regex=True).str.strip()
@@ -124,7 +124,7 @@ else:
         x='Temp',
         y='Value',
         color='Legend',
-        #line_dash='LineDash',
+        line_dash='LineDash',
         color_discrete_map=color_discrete_map,
         markers=True,
         title=f"Dashboard - Curvas de Revenido: {test_type}",
