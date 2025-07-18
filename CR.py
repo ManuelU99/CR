@@ -15,13 +15,17 @@ columns_traccion = df.columns[7:20]
 columns_dureza = df.columns[22:30]
 columns_charpy = df.columns[33:44]
 
-column_a = df.columns[0]
-column_c = df.columns[2]
-column_e = df.columns[4]
-column_f = df.columns[5]
+column_a = df.columns[0]  # Tipo_Acero_Limpio
+column_c = df.columns[2]  # Ciclo
+column_e = df.columns[4]  # Muestra_Probeta_Temp
+column_f = df.columns[5]  # Tubo
 
-# Extract Temp (number after second '-')
+# Extract Muestra and Temp
+df['Muestra'] = df[column_e].str.split('-').str[0]
 df['Temp'] = df[column_e].str.extract(r'-(?:[^-]*)-(\d+)').astype(float).round()
+
+# Calculate Muestra Instance (retest count)
+df['MuestraInstance'] = df.groupby([column_a, 'Muestra', 'Temp']).cumcount() + 1
 
 # Sidebar filters
 st.sidebar.header("Filters")
@@ -37,6 +41,10 @@ all_soaking = sorted(df_filtered[column_f].dropna().unique())
 selected_soaking = st.sidebar.multiselect("Select Soaking", all_soaking, default=all_soaking)
 df_filtered = df_filtered[df_filtered[column_f].isin(selected_soaking)]
 
+all_instances = sorted(df_filtered['MuestraInstance'].unique())
+selected_instance = st.sidebar.multiselect("Select Muestra Instance", all_instances, default=all_instances)
+df_filtered = df_filtered[df_filtered['MuestraInstance'].isin(selected_instance)]
+
 test_type = st.sidebar.selectbox("Select Test Type", ["Traccion", "Dureza", "Charpy"])
 
 if test_type == "Traccion":
@@ -50,7 +58,7 @@ if df_filtered.empty:
     st.warning("⚠ No data available for the selected filters.")
 else:
     long_df = df_filtered.melt(
-        id_vars=[column_a, column_c, column_e, column_f, 'Temp'],
+        id_vars=[column_a, column_c, column_e, column_f, 'Temp', 'Muestra', 'MuestraInstance'],
         value_vars=selected_columns,
         var_name='Measurement',
         value_name='Value'
@@ -72,11 +80,11 @@ else:
         if "dureza" in m_norm and "ind" in m_norm and "max" in m_norm:
             return '#CC0066'
         if "dureza" in m_norm and "ind" in m_norm and "min" in m_norm:
-            return "#FF0040"
+            return '#EC36E0'
         if "dureza" in m_norm and "prom" in m_norm and "max" in m_norm:
             return '#00009A'
         if "dureza" in m_norm and "prom" in m_norm and "min" in m_norm:
-            return "#3737E7"
+            return '#1F7CC7'
         if "energ" in m_norm and "ind" in m_norm:
             return '#CC0066'
         if "energ" in m_norm and "prom" in m_norm:
@@ -84,8 +92,8 @@ else:
         if "area" in m_norm and "ind" in m_norm:
             return '#009900'
         if "area" in m_norm and "prom" in m_norm:
-            return "#000000"
-        return "#999999"
+            return '#009900'
+        return '#999999'
 
     def assign_dash(m):
         m_norm = normalize(m)
@@ -107,11 +115,8 @@ else:
     fig = go.Figure()
 
     for (legend, color, dash), group in long_df.groupby(['Legend', 'ColorHex', 'LineDash']):
-        # Check if 'req' is in normalized legend
         legend_norm = normalize(legend)
-        show_text = None
-        if 'req' not in legend_norm:
-            show_text = group['Value']
+        show_text = group['Value'] if 'req' not in legend_norm else None
 
         fig.add_trace(go.Scatter(
             x=group['Temp'],
@@ -121,7 +126,13 @@ else:
             line=dict(color=color, dash=dash),
             text=show_text,
             textposition='top center',
-            hovertemplate=f'<b>{legend}</b><br>Temp=%{{x}}<br>Value=%{{y}}<extra></extra>'
+            hovertemplate=(
+                f"<b>{legend}</b><br>"
+                f"Muestra: %{{customdata[0]}} (Instance %{{customdata[1]}})<br>"
+                f"Temp: %{{x}}<br>"
+                f"Value: %{{y}}<extra></extra>"
+            ),
+            customdata=group[['Muestra', 'MuestraInstance']].values
         ))
 
     fig.update_layout(
