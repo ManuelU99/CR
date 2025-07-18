@@ -25,10 +25,21 @@ df['Temp'] = df[column_e].str.extract(r'-(?:[^-]*)-(\d+)').astype(float)
 
 # Sidebar filters
 st.sidebar.header("Filters")
-selected_tipo = st.sidebar.multiselect("Select Tipo_Acero_Limpio", sorted(df[column_a].dropna().unique()), sorted(df[column_a].dropna().unique()))
-selected_ciclo = st.sidebar.multiselect("Select Ciclo", sorted(df[column_c].dropna().unique()), sorted(df[column_c].dropna().unique()))
-filtered_df_for_soaking = df[df[column_a].isin(selected_tipo)] if selected_tipo else df
-selected_soaking = st.sidebar.multiselect("Select Soaking", sorted(filtered_df_for_soaking[column_f].dropna().unique()), sorted(filtered_df_for_soaking[column_f].dropna().unique()))
+
+# --- Smart filter step 1: Tipo_Acero_Limpio ---
+all_tipo = sorted(df[column_a].dropna().unique())
+selected_tipo = st.sidebar.multiselect("Select Tipo_Acero_Limpio", all_tipo, default=all_tipo)
+df_filtered = df[df[column_a].isin(selected_tipo)]
+
+# --- Smart filter step 2: Ciclo ---
+all_ciclos = sorted(df_filtered[column_c].dropna().unique())
+selected_ciclo = st.sidebar.multiselect("Select Ciclo", all_ciclos, default=all_ciclos)
+df_filtered = df_filtered[df_filtered[column_c].isin(selected_ciclo)]
+
+# --- Smart filter step 3: Soaking ---
+all_soaking = sorted(df_filtered[column_f].dropna().unique())
+selected_soaking = st.sidebar.multiselect("Select Soaking", all_soaking, default=all_soaking)
+df_filtered = df_filtered[df_filtered[column_f].isin(selected_soaking)]
 
 # Select test type
 test_type = st.sidebar.selectbox("Select Test Type", ["Traccion", "Dureza", "Charpy"])
@@ -41,21 +52,11 @@ elif test_type == "Dureza":
 elif test_type == "Charpy":
     selected_columns = columns_charpy
 
-# Apply filters
-df_filtered = df.copy()
-if selected_tipo:
-    df_filtered = df_filtered[df_filtered[column_a].isin(selected_tipo)]
-if selected_ciclo:
-    df_filtered = df_filtered[df_filtered[column_c].isin(selected_ciclo)]
-if selected_soaking:
-    df_filtered = df_filtered[df_filtered[column_f].isin(selected_soaking)]
-
-
 if df_filtered.empty:
     st.warning("⚠ No data available for the selected filters.")
 else:
     long_df = df_filtered.melt(
-        id_vars=[column_a, column_e, 'Temp', column_f],
+        id_vars=[column_a, column_c, column_e, column_f, 'Temp'],
         value_vars=selected_columns,
         var_name='Measurement',
         value_name='Value'
@@ -88,9 +89,9 @@ else:
             return '#CC0066'
         if "energ" in m_norm and "prom" in m_norm:
             return '#00009A'
-        if "area" in m_norm  and "ind" in m_norm:
+        if "area" in m_norm and "ind" in m_norm:
             return '#009900'
-        if "area" in m_norm  and "prom" in m_norm:
+        if "area" in m_norm and "prom" in m_norm:
             return '#009900'
         return '#999999'
 
