@@ -18,9 +18,9 @@ column_d = df.columns[3]  # Familia
 column_e = df.columns[4]  # Muestra_Probeta_Temp
 column_j = df.columns[9]  # Tubo
 
-columns_traccion = df.columns[7:20]
-columns_dureza = df.columns[22:30]
-columns_charpy = df.columns[33:44]
+columns_traccion = df.columns[10:22]
+columns_dureza = df.columns[23:30]
+columns_charpy = df.columns[31:42]
 
 # Extract Muestra, Probeta, Temp
 split_cols = df[column_e].str.split('-', expand=True)
