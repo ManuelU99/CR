@@ -10,7 +10,7 @@ st.set_page_config(page_title="Dashboard - Curvas de Revenido", layout="wide")
 file_path = "data_bi_CR.csv"
 df = pd.read_csv(file_path)
 
-# Define columns
+# Define key columns
 column_a = df.columns[0]  # Tipo_Acero_Limpio
 column_b = df.columns[1]  # Grado_Acero
 column_c = df.columns[2]  # Ciclo
@@ -28,41 +28,30 @@ df['Muestra'] = split_cols[0]
 df['Probeta'] = split_cols[1]
 df['Temp'] = split_cols[2].astype(float).round()
 
-# Sidebar filters (initial options from full df)
+# Sidebar filters (simple cascade: Familia → rest)
 st.sidebar.header("Filters")
-selected_familia = st.sidebar.multiselect("Select Familia", sorted(df[column_d].dropna().unique()))
-selected_tipo = st.sidebar.multiselect("Select Tipo_Acero_Limpio", sorted(df[column_a].dropna().unique()))
-selected_ciclo = st.sidebar.multiselect("Select Ciclo", sorted(df[column_c].dropna().unique()))
-selected_soaking = st.sidebar.multiselect("Select Soaking", sorted(df[column_f].dropna().unique()))
 
-# Apply selected filters
-df_filtered = df.copy()
-if selected_familia:
-    df_filtered = df_filtered[df_filtered[column_d].isin(selected_familia)]
-if selected_tipo:
-    df_filtered = df_filtered[df_filtered[column_a].isin(selected_tipo)]
-if selected_ciclo:
-    df_filtered = df_filtered[df_filtered[column_c].isin(selected_ciclo)]
-if selected_soaking:
-    df_filtered = df_filtered[df_filtered[column_f].isin(selected_soaking)]
+# Step 1: Familia
+all_familia = sorted(df[column_d].dropna().unique())
+selected_familia = st.sidebar.multiselect("Select Familia", all_familia, default=all_familia)
+df_filtered = df[df[column_d].isin(selected_familia)]
 
-# Recalculate available options dynamically (Power BI style!)
-available_familia = sorted(df_filtered[column_d].dropna().unique())
-available_tipo = sorted(df_filtered[column_a].dropna().unique())
-available_ciclo = sorted(df_filtered[column_c].dropna().unique())
-available_soaking = sorted(df_filtered[column_f].dropna().unique())
+# Step 2: Tipo_Acero_Limpio (depends on Familia)
+all_tipo = sorted(df_filtered[column_a].dropna().unique())
+selected_tipo = st.sidebar.multiselect("Select Tipo_Acero_Limpio", all_tipo, default=all_tipo)
+df_filtered = df_filtered[df_filtered[column_a].isin(selected_tipo)]
 
-# Reset filters if selection causes empty set (avoid breaking)
-if not available_familia:
-    selected_familia = []
-if not available_tipo:
-    selected_tipo = []
-if not available_ciclo:
-    selected_ciclo = []
-if not available_soaking:
-    selected_soaking = []
+# Step 3: Ciclo (depends on above)
+all_ciclos = sorted(df_filtered[column_c].dropna().unique())
+selected_ciclo = st.sidebar.multiselect("Select Ciclo", all_ciclos, default=all_ciclos)
+df_filtered = df_filtered[df_filtered[column_c].isin(selected_ciclo)]
 
-# Select test type
+# Step 4: Soaking (depends on above)
+all_soaking = sorted(df_filtered[column_f].dropna().unique())
+selected_soaking = st.sidebar.multiselect("Select Soaking", all_soaking, default=all_soaking)
+df_filtered = df_filtered[df_filtered[column_f].isin(selected_soaking)]
+
+# Step 5: Test type
 test_type = st.sidebar.selectbox("Select Test Type", ["Traccion", "Dureza", "Charpy"])
 selected_columns = (
     columns_traccion if test_type == "Traccion"
@@ -129,6 +118,7 @@ else:
     long_df['LineDash'] = long_df['Measurement'].apply(assign_dash)
     long_df['Legend'] = long_df['MeasurementClean'] + ' (Soaking ' + long_df[column_f].astype(str) + ')'
 
+    # Check if ≤100 points for data labels
     show_labels = len(long_df) <= 100
 
     fig = go.Figure()
