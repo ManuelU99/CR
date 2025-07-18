@@ -3,7 +3,7 @@ import plotly.graph_objects as go
 import streamlit as st
 import unicodedata
 
-# Set page config
+# Set Streamlit page config
 st.set_page_config(page_title="Dashboard - Curvas de Revenido", layout="wide")
 
 # Load data
@@ -24,20 +24,20 @@ column_f = df.columns[5]  # Tubo
 df['Muestra'] = df[column_e].str.split('-').str[0]
 df['Temp'] = df[column_e].str.extract(r'-(?:[^-]*)-(\d+)').astype(float).round()
 
-# Add RowNumber to preserve original file order
+# Add RowNumber to preserve original order
 df['RowNumber'] = df.reset_index().index
 
-# Sort by Tipo_Acero_Limpio, Temp, Muestra, RowNumber
+# Sort by order
 df.sort_values(['Tipo_Acero_Limpio', 'Temp', 'Muestra', 'RowNumber'], inplace=True)
 
-# Create key: Muestra-Temp
+# Create key Muestra-Temp
 df['MuestraTempKey'] = df['Muestra'].astype(str) + '-' + df['Temp'].astype(int).astype(str)
 
-# Assign repetition number per key
-df['PerKeyGroupNumber'] = df.groupby('MuestraTempKey').cumcount() + 1
+# Assign repetition count per (Muestra, Temp)
+df['KeyNumber'] = df.groupby('MuestraTempKey').cumcount() + 1
 
-# Get global maximum group count (this gives how many total batches)
-max_group_number = df['PerKeyGroupNumber'].max()
+# Calculate the maximum KeyNumber across all rows → total number of groups
+max_group_number = df['KeyNumber'].max()
 
 # Sidebar filters
 st.sidebar.header("Filters")
@@ -53,14 +53,14 @@ all_soaking = sorted(df_filtered[column_f].dropna().unique())
 selected_soaking = st.sidebar.multiselect("Select Soaking", all_soaking, default=all_soaking)
 df_filtered = df_filtered[df_filtered[column_f].isin(selected_soaking)]
 
-# Provide selection across the maximum global group numbers
+# Provide group selection from 1 to max_group_number
 available_groups = list(range(1, max_group_number + 1))
 selected_groups = st.sidebar.multiselect(
-    "Select Global Group Number (1 = first batch, etc.)", available_groups, default=available_groups
+    "Select Group Number (from maximum key count)", available_groups, default=available_groups
 )
 
-# Filter: keep only rows that are part of selected groups
-df_filtered = df_filtered[df_filtered['PerKeyGroupNumber'].isin(selected_groups)]
+# Filter rows that match the selected KeyNumber(s)
+df_filtered = df_filtered[df_filtered['KeyNumber'].isin(selected_groups)]
 
 test_type = st.sidebar.selectbox("Select Test Type", ["Traccion", "Dureza", "Charpy"])
 
@@ -75,7 +75,7 @@ if df_filtered.empty:
     st.warning("⚠ No data available for the selected filters.")
 else:
     long_df = df_filtered.melt(
-        id_vars=[column_a, column_c, column_e, column_f, 'Temp', 'Muestra', 'PerKeyGroupNumber'],
+        id_vars=[column_a, column_c, column_e, column_f, 'Temp', 'Muestra', 'KeyNumber'],
         value_vars=selected_columns,
         var_name='Measurement',
         value_name='Value'
@@ -145,11 +145,11 @@ else:
             textposition='top center',
             hovertemplate=(
                 f"<b>{legend}</b><br>"
-                f"Muestra: %{{customdata[0]}} (Group %{{customdata[1]}})<br>"
+                f"Muestra: %{{customdata[0]}} (Key %{{customdata[1]}})<br>"
                 f"Temp: %{{x}}<br>"
                 f"Value: %{{y}}<extra></extra>"
             ),
-            customdata=group[['Muestra', 'PerKeyGroupNumber']].values
+            customdata=group[['Muestra', 'KeyNumber']].values
         ))
 
     fig.update_layout(
