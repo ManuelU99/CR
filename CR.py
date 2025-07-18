@@ -16,7 +16,7 @@ column_b = df.columns[1]  # Grado_Acero
 column_c = df.columns[2]  # Ciclo
 column_d = df.columns[3]  # Familia
 column_e = df.columns[4]  # Muestra_Probeta_Temp
-column_f = df.columns[5]  # Tubo
+column_j = df.columns[9]  # Tubo
 
 columns_traccion = df.columns[7:20]
 columns_dureza = df.columns[22:30]
@@ -47,9 +47,9 @@ selected_ciclo = st.sidebar.multiselect("Select Ciclo", all_ciclos, default=all_
 df_filtered = df_filtered[df_filtered[column_c].isin(selected_ciclo)]
 
 # Step 4: Soaking (depends on above)
-all_soaking = sorted(df_filtered[column_f].dropna().unique())
+all_soaking = sorted(df_filtered[column_j].dropna().unique())
 selected_soaking = st.sidebar.multiselect("Select Soaking", all_soaking, default=all_soaking)
-df_filtered = df_filtered[df_filtered[column_f].isin(selected_soaking)]
+df_filtered = df_filtered[df_filtered[column_j].isin(selected_soaking)]
 
 # Step 5: Test type
 test_type = st.sidebar.selectbox("Select Test Type", ["Traccion", "Dureza", "Charpy"])
@@ -64,7 +64,7 @@ if df_filtered.empty:
     st.warning("⚠ No data available for the selected filters.")
 else:
     long_df = df_filtered.melt(
-        id_vars=[column_a, column_c, column_d, column_e, column_f, 'Temp', 'Muestra', 'Probeta'],
+        id_vars=[column_a, column_c, column_d, column_e, column_j, 'Temp', 'Muestra', 'Probeta'],
         value_vars=selected_columns,
         var_name='Measurement',
         value_name='Value'
@@ -116,7 +116,7 @@ else:
     long_df['MeasurementClean'] = long_df['Measurement'].str.replace(r'\(merged\)', '', regex=True).str.strip()
     long_df['ColorHex'] = long_df['Measurement'].apply(assign_color)
     long_df['LineDash'] = long_df['Measurement'].apply(assign_dash)
-    long_df['Legend'] = long_df['MeasurementClean'] + ' (Soaking ' + long_df[column_f].astype(str) + ')'
+    long_df['Legend'] = long_df['MeasurementClean'] + ' (Soaking ' + long_df[column_j].astype(str) + ')'
 
     # Check if ≤100 points for data labels
     show_labels = len(long_df) <= 100
