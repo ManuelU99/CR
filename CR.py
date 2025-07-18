@@ -16,11 +16,13 @@ columns_dureza = df.columns[22:30]
 columns_charpy = df.columns[33:44]
 
 column_a = df.columns[0]  # Tipo_Acero_Limpio
+column_b = df.columns[1]  # Grado_Acero (not used now)
 column_c = df.columns[2]  # Ciclo
+column_d = df.columns[3]  # Familia ✅ NEW!
 column_e = df.columns[4]  # Muestra_Probeta_Temp
 column_f = df.columns[5]  # Tubo
 
-# Extract Muestra, Probeta, Temp from Muestra_Probeta_Temp
+# Extract Muestra, Probeta, Temp
 split_cols = df[column_e].str.split('-', expand=True)
 df['Muestra'] = split_cols[0]
 df['Probeta'] = split_cols[1]
@@ -31,6 +33,10 @@ st.sidebar.header("Filters")
 all_tipo = sorted(df[column_a].dropna().unique())
 selected_tipo = st.sidebar.multiselect("Select Tipo_Acero_Limpio", all_tipo, default=all_tipo)
 df_filtered = df[df[column_a].isin(selected_tipo)]
+
+all_familia = sorted(df_filtered[column_d].dropna().unique())
+selected_familia = st.sidebar.multiselect("Select Familia", all_familia, default=all_familia)
+df_filtered = df_filtered[df_filtered[column_d].isin(selected_familia)]
 
 all_ciclos = sorted(df_filtered[column_c].dropna().unique())
 selected_ciclo = st.sidebar.multiselect("Select Ciclo", all_ciclos, default=all_ciclos)
@@ -54,7 +60,7 @@ if df_filtered.empty:
     st.warning("⚠ No data available for the selected filters.")
 else:
     long_df = df_filtered.melt(
-        id_vars=[column_a, column_c, column_e, column_f, 'Temp', 'Muestra', 'Probeta'],
+        id_vars=[column_a, column_c, column_d, column_e, column_f, 'Temp', 'Muestra', 'Probeta'],
         value_vars=selected_columns,
         var_name='Measurement',
         value_name='Value'
