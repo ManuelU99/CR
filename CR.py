@@ -3,18 +3,14 @@ import plotly.graph_objects as go
 import streamlit as st
 import unicodedata
 
-# Set Streamlit page config
+# Config
 st.set_page_config(page_title="Dashboard - Curvas de Revenido", layout="wide")
 
 # Load data
 file_path = "data_bi_CR.csv"
 df = pd.read_csv(file_path)
 
-# Define key columns
-columns_traccion = df.columns[7:20]
-columns_dureza = df.columns[22:30]
-columns_charpy = df.columns[33:44]
-
+# Key columns
 column_a = df.columns[0]  # Tipo_Acero_Limpio
 column_b = df.columns[1]  # Grado_Acero
 column_c = df.columns[2]  # Ciclo
@@ -22,52 +18,58 @@ column_d = df.columns[3]  # Familia
 column_e = df.columns[4]  # Muestra_Probeta_Temp
 column_f = df.columns[5]  # Tubo
 
+columns_traccion = df.columns[7:20]
+columns_dureza = df.columns[22:30]
+columns_charpy = df.columns[33:44]
+
 # Extract Muestra, Probeta, Temp
 split_cols = df[column_e].str.split('-', expand=True)
 df['Muestra'] = split_cols[0]
 df['Probeta'] = split_cols[1]
 df['Temp'] = split_cols[2].astype(float).round()
 
-# Start filtering with full df
-df_filtered = df.copy()
-
-# Sidebar filters (smart bidirectional!)
+# Sidebar
 st.sidebar.header("Filters")
 
-# Step 1: Familia
-all_familia = sorted(df_filtered[column_d].dropna().unique())
-selected_familia = st.sidebar.multiselect("Select Familia", all_familia)
+# Initialize selected values from sidebar (start with full dataset)
+selected_familia = st.sidebar.multiselect("Select Familia", sorted(df[column_d].dropna().unique()))
+selected_tipo = st.sidebar.multiselect("Select Tipo_Acero_Limpio", sorted(df[column_a].dropna().unique()))
+selected_ciclo = st.sidebar.multiselect("Select Ciclo", sorted(df[column_c].dropna().unique()))
+selected_soaking = st.sidebar.multiselect("Select Soaking", sorted(df[column_f].dropna().unique()))
+
+# Filter step 1: apply all selected filters together
+df_filtered = df.copy()
 if selected_familia:
     df_filtered = df_filtered[df_filtered[column_d].isin(selected_familia)]
-
-# Step 2: Tipo_Acero_Limpio (update options after Familia)
-all_tipo = sorted(df_filtered[column_a].dropna().unique())
-selected_tipo = st.sidebar.multiselect("Select Tipo_Acero_Limpio", all_tipo)
 if selected_tipo:
     df_filtered = df_filtered[df_filtered[column_a].isin(selected_tipo)]
-
-# Step 3: Ciclo (update options after above)
-all_ciclos = sorted(df_filtered[column_c].dropna().unique())
-selected_ciclo = st.sidebar.multiselect("Select Ciclo", all_ciclos)
 if selected_ciclo:
     df_filtered = df_filtered[df_filtered[column_c].isin(selected_ciclo)]
-
-# Step 4: Soaking (update options after above)
-all_soaking = sorted(df_filtered[column_f].dropna().unique())
-selected_soaking = st.sidebar.multiselect("Select Soaking", all_soaking)
 if selected_soaking:
     df_filtered = df_filtered[df_filtered[column_f].isin(selected_soaking)]
 
-# Step 5: Test Type
-test_type = st.sidebar.selectbox("Select Test Type", ["Traccion", "Dureza", "Charpy"])
-if test_type == "Traccion":
-    selected_columns = columns_traccion
-elif test_type == "Dureza":
-    selected_columns = columns_dureza
-elif test_type == "Charpy":
-    selected_columns = columns_charpy
+# Step 2: recalculate options dynamically from filtered data
+all_familia = sorted(df_filtered[column_d].dropna().unique())
+all_tipo = sorted(df_filtered[column_a].dropna().unique())
+all_ciclos = sorted(df_filtered[column_c].dropna().unique())
+all_soaking = sorted(df_filtered[column_f].dropna().unique())
 
-# Check and plot
+# Update sidebar options live (show available options only)
+st.sidebar.markdown("**Available after filtering:**")
+st.sidebar.write(f"Familia: {all_familia}")
+st.sidebar.write(f"Tipo_Acero_Limpio: {all_tipo}")
+st.sidebar.write(f"Ciclo: {all_ciclos}")
+st.sidebar.write(f"Soaking: {all_soaking}")
+
+# Select test type
+test_type = st.sidebar.selectbox("Select Test Type", ["Traccion", "Dureza", "Charpy"])
+selected_columns = (
+    columns_traccion if test_type == "Traccion"
+    else columns_dureza if test_type == "Dureza"
+    else columns_charpy
+)
+
+# If no data, warn
 if df_filtered.empty:
     st.warning("⚠ No data available for the selected filters.")
 else:
@@ -78,13 +80,11 @@ else:
         value_name='Value'
     ).dropna(subset=['Value', 'Temp'])
 
-    # Normalize helper
     def normalize(text):
         text = text.lower()
         text = unicodedata.normalize('NFKD', text).encode('ASCII', 'ignore').decode('utf-8')
         return text
 
-    # Color assignment
     def assign_color(m):
         m_norm = normalize(m)
         if "fluencia" in m_norm:
@@ -111,7 +111,6 @@ else:
             return '#009900'
         return '#999999'
 
-    # Dash style assignment
     def assign_dash(m):
         m_norm = normalize(m)
         has_req = "req" in m_norm
