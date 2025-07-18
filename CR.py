@@ -27,22 +27,11 @@ df['Temp'] = df[column_e].str.extract(r'-(?:[^-]*)-(\d+)').astype(float).round()
 # Add RowNumber to preserve original order
 df['RowNumber'] = df.reset_index().index
 
-# Sort by original order
-df.sort_values(['RowNumber'], inplace=True)
+# Sort to ensure stable counting
+df.sort_values(['Tipo_Acero_Limpio', 'Temp', 'Muestra', 'RowNumber'], inplace=True)
 
-# Initialize BlockID detection
-df['BlockID'] = 1
-seen_pairs = set()
-current_block = 1
-
-for idx, row in df.iterrows():
-    pair = (row['Muestra'], row['Temp'])
-    if pair in seen_pairs:
-        # Start new block if repeated pair in same block
-        current_block += 1
-        seen_pairs = set()
-    seen_pairs.add(pair)
-    df.at[idx, 'BlockID'] = current_block
+# Assign unique group number for each repeated (Muestra, Temp) pair
+df['MuestraTempGroupNumber'] = df.groupby(['Muestra', 'Temp']).cumcount() + 1
 
 # Sidebar filters
 st.sidebar.header("Filters")
@@ -58,9 +47,11 @@ all_soaking = sorted(df_filtered[column_f].dropna().unique())
 selected_soaking = st.sidebar.multiselect("Select Soaking", all_soaking, default=all_soaking)
 df_filtered = df_filtered[df_filtered[column_f].isin(selected_soaking)]
 
-all_blocks = sorted(df_filtered['BlockID'].unique())
-selected_blocks = st.sidebar.multiselect("Select Block (Run)", all_blocks, default=all_blocks)
-df_filtered = df_filtered[df_filtered['BlockID'].isin(selected_blocks)]
+all_group_numbers = sorted(df_filtered['MuestraTempGroupNumber'].unique())
+selected_group_numbers = st.sidebar.multiselect(
+    "Select Muestra-Temp Group Number", all_group_numbers, default=all_group_numbers
+)
+df_filtered = df_filtered[df_filtered['MuestraTempGroupNumber'].isin(selected_group_numbers)]
 
 test_type = st.sidebar.selectbox("Select Test Type", ["Traccion", "Dureza", "Charpy"])
 
@@ -75,7 +66,7 @@ if df_filtered.empty:
     st.warning("⚠ No data available for the selected filters.")
 else:
     long_df = df_filtered.melt(
-        id_vars=[column_a, column_c, column_e, column_f, 'Temp', 'Muestra', 'BlockID'],
+        id_vars=[column_a, column_c, column_e, column_f, 'Temp', 'Muestra', 'MuestraTempGroupNumber'],
         value_vars=selected_columns,
         var_name='Measurement',
         value_name='Value'
@@ -145,11 +136,11 @@ else:
             textposition='top center',
             hovertemplate=(
                 f"<b>{legend}</b><br>"
-                f"Muestra: %{{customdata[0]}} (Block %{{customdata[1]}})<br>"
+                f"Muestra: %{{customdata[0]}} (Group %{{customdata[1]}})<br>"
                 f"Temp: %{{x}}<br>"
                 f"Value: %{{y}}<extra></extra>"
             ),
-            customdata=group[['Muestra', 'BlockID']].values
+            customdata=group[['Muestra', 'MuestraTempGroupNumber']].values
         ))
 
     fig.update_layout(
