@@ -95,12 +95,13 @@ else:
             return '#009900'
         return '#999999'
 
-    # Assign dash (robust for Req + Max/Min, with accent-insensitive match)
+    # Improved dash assignment (robust for Req + Max/Mín with accents)
     def assign_dash(m):
         m_norm = normalize(m)
         has_req = "req" in m_norm
-        has_max = "max" in m_norm
-        has_min = "min" in m_norm
+        has_max = "max" in m_norm or "máx" in m_norm
+        has_min = "min" in m_norm or "mín" in m_norm
+
         if has_req and has_max:
             return 'dash'
         elif has_req and has_min:
@@ -113,7 +114,7 @@ else:
     long_df['ColorHex'] = long_df['Measurement'].apply(assign_color)
     long_df['LineDash'] = long_df['Measurement'].apply(assign_dash)
 
-    # 🚀 Combine Legend + LineDash internally to force unique series in Plotly
+    # Combine Legend + LineDash internally to force unique series in Plotly
     long_df['LegendUnique'] = long_df['MeasurementClean'] + ' (Soaking ' + long_df[column_f].astype(str) + ') [' + long_df['LineDash'] + ']'
     # Clean Legend for display (no dash info)
     long_df['LegendClean'] = long_df['MeasurementClean'] + ' (Soaking ' + long_df[column_f].astype(str) + ')'
