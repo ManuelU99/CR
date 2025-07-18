@@ -95,7 +95,7 @@ else:
             return '#009900'
         return '#999999'
 
-    # Assign dash
+    # Assign dash (robust for Req + Max/Min, with accent-insensitive match)
     def assign_dash(m):
         m_norm = normalize(m)
         has_req = "req" in m_norm
@@ -108,23 +108,26 @@ else:
         else:
             return 'solid'
 
-
-
     # Clean Measurement (remove '(merged)' if present)
     long_df['MeasurementClean'] = long_df['Measurement'].str.replace(r'\(merged\)', '', regex=True).str.strip()
     long_df['ColorHex'] = long_df['Measurement'].apply(assign_color)
     long_df['LineDash'] = long_df['Measurement'].apply(assign_dash)
-    long_df['Legend'] = long_df['MeasurementClean'] + ' (Soaking ' + long_df[column_f].astype(str) + ')'
 
-    # Create color map per unique Legend
-    color_discrete_map = dict(zip(long_df['Legend'], long_df['ColorHex']))
+    # 🚀 Combine Legend + LineDash internally to force unique series in Plotly
+    long_df['LegendUnique'] = long_df['MeasurementClean'] + ' (Soaking ' + long_df[column_f].astype(str) + ') [' + long_df['LineDash'] + ']'
+    # Clean Legend for display (no dash info)
+    long_df['LegendClean'] = long_df['MeasurementClean'] + ' (Soaking ' + long_df[column_f].astype(str) + ')'
+
+    # Create color map per unique LegendUnique
+    color_discrete_map = dict(zip(long_df['LegendUnique'], long_df['ColorHex']))
+    legend_name_map = dict(zip(long_df['LegendUnique'], long_df['LegendClean']))
 
     # Plot
     fig = px.line(
         long_df,
         x='Temp',
         y='Value',
-        color='Legend',
+        color='LegendUnique',
         line_dash='LineDash',
         color_discrete_map=color_discrete_map,
         markers=True,
@@ -132,18 +135,19 @@ else:
         labels={'Temp': 'Temp', 'Value': 'Value'}
     )
 
-    # Update layout: unified hover, custom tooltip
+    # Update traces: overwrite legend names + hovertemplate
+    fig.for_each_trace(lambda t: t.update(
+        name=legend_name_map.get(t.name, t.name),
+        hovertemplate='<b>%{fullData.name}</b><br>Temp=%{x}<br>Value=%{y}<extra></extra>'
+    ))
+
+    # Update layout
     fig.update_layout(
         xaxis=dict(tickangle=0),
         legend_title='Series',
         height=700,
         width=1200,
         hovermode='x unified'
-    )
-
-    # Custom hovertemplate: no LineDash, no extra trace info
-    fig.update_traces(
-        hovertemplate='<b>%{fullData.name}</b><br>Temp=%{x}<br>Value=%{y}<extra></extra>'
     )
 
     st.plotly_chart(fig, use_container_width=True)
