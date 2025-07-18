@@ -20,24 +20,22 @@ column_c = df.columns[2]  # Ciclo
 column_e = df.columns[4]  # Muestra_Probeta_Temp
 column_f = df.columns[5]  # Tubo
 
-# Extract Muestra and Temp
-df['Muestra'] = df[column_e].str.split('-').str[0]
-df['Temp'] = df[column_e].str.extract(r'-(?:[^-]*)-(\d+)').astype(float).round()
+# Extract Muestra, middle ID, Temp
+split_cols = df[column_e].str.split('-', expand=True)
+df['Muestra'] = split_cols[0]
+df['MiddleID'] = split_cols[1]
+df['Temp'] = split_cols[2].astype(float).round()
 
-# Add RowNumber to preserve original order
+# Sort to preserve input order
 df['RowNumber'] = df.reset_index().index
+df.sort_values(['Muestra', 'Temp', 'RowNumber'], inplace=True)
 
-# Sort by order
-df.sort_values(['Tipo_Acero_Limpio', 'Temp', 'Muestra', 'RowNumber'], inplace=True)
+# Assign global group number:
+# For each (Muestra, Temp), assign appearance index (1, 2, ...)
+df['GroupInstance'] = df.groupby(['Muestra', 'Temp']).cumcount() + 1
 
-# Create key Muestra-Temp
-df['MuestraTempKey'] = df['Muestra'].astype(str) + '-' + df['Temp'].astype(int).astype(str)
-
-# Assign repetition count per (Muestra, Temp)
-df['KeyNumber'] = df.groupby('MuestraTempKey').cumcount() + 1
-
-# Calculate the maximum KeyNumber across all rows → total number of groups
-max_group_number = df['KeyNumber'].max()
+# Now, determine the max number of group instances across all Muestra-Temp
+max_group_number = df['GroupInstance'].max()
 
 # Sidebar filters
 st.sidebar.header("Filters")
@@ -53,15 +51,16 @@ all_soaking = sorted(df_filtered[column_f].dropna().unique())
 selected_soaking = st.sidebar.multiselect("Select Soaking", all_soaking, default=all_soaking)
 df_filtered = df_filtered[df_filtered[column_f].isin(selected_soaking)]
 
-# Provide group selection from 1 to max_group_number
+# Provide selection: 1 to max_group_number
 available_groups = list(range(1, max_group_number + 1))
 selected_groups = st.sidebar.multiselect(
-    "Select Group Number (from maximum key count)", available_groups, default=available_groups
+    "Select Group Number (global repetitions)", available_groups, default=available_groups
 )
 
-# Filter rows that match the selected KeyNumber(s)
-df_filtered = df_filtered[df_filtered['KeyNumber'].isin(selected_groups)]
+# Filter rows where GroupInstance is in selected groups
+df_filtered = df_filtered[df_filtered['GroupInstance'].isin(selected_groups)]
 
+# Select test type
 test_type = st.sidebar.selectbox("Select Test Type", ["Traccion", "Dureza", "Charpy"])
 
 if test_type == "Traccion":
@@ -75,7 +74,7 @@ if df_filtered.empty:
     st.warning("⚠ No data available for the selected filters.")
 else:
     long_df = df_filtered.melt(
-        id_vars=[column_a, column_c, column_e, column_f, 'Temp', 'Muestra', 'KeyNumber'],
+        id_vars=[column_a, column_c, column_e, column_f, 'Temp', 'Muestra', 'GroupInstance'],
         value_vars=selected_columns,
         var_name='Measurement',
         value_name='Value'
@@ -145,11 +144,11 @@ else:
             textposition='top center',
             hovertemplate=(
                 f"<b>{legend}</b><br>"
-                f"Muestra: %{{customdata[0]}} (Key %{{customdata[1]}})<br>"
+                f"Muestra: %{{customdata[0]}} (GroupInstance %{{customdata[1]}})<br>"
                 f"Temp: %{{x}}<br>"
                 f"Value: %{{y}}<extra></extra>"
             ),
-            customdata=group[['Muestra', 'KeyNumber']].values
+            customdata=group[['Muestra', 'GroupInstance']].values
         ))
 
     fig.update_layout(
