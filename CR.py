@@ -104,21 +104,26 @@ else:
     long_df['LineDash'] = long_df['Measurement'].apply(assign_dash)
     long_df['Legend'] = long_df['MeasurementClean'] + ' (Soaking ' + long_df[column_f].astype(str) + ')'
 
-    # Build Plotly Figure
     fig = go.Figure()
 
-    # Add one trace per unique series
     for (legend, color, dash), group in long_df.groupby(['Legend', 'ColorHex', 'LineDash']):
+        # Check if 'req' is in normalized legend
+        legend_norm = normalize(legend)
+        show_text = None
+        if 'req' not in legend_norm:
+            show_text = group['Value']
+
         fig.add_trace(go.Scatter(
             x=group['Temp'],
             y=group['Value'],
-            mode='lines+markers',
+            mode='lines+markers+text' if show_text is not None else 'lines+markers',
             name=legend,
             line=dict(color=color, dash=dash),
+            text=show_text,
+            textposition='top center',
             hovertemplate=f'<b>{legend}</b><br>Temp=%{{x}}<br>Value=%{{y}}<extra></extra>'
         ))
 
-    # Update layout
     fig.update_layout(
         title=f"Dashboard - Curvas de Revenido: {test_type}",
         xaxis_title='Temp',
@@ -127,7 +132,7 @@ else:
         legend_title='Series',
         height=700,
         width=1200,
-        hovermode='x unified'
+        hovermode='x'
     )
 
     st.plotly_chart(fig, use_container_width=True)
