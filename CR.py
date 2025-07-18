@@ -103,7 +103,7 @@ else:
         has_min = "min" in m_norm or "mín" in m_norm
 
         if has_req and has_max:
-            return 'dash'
+            return 'dot'
         elif has_req and has_min:
             return 'dot'
         else:
