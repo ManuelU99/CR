@@ -101,9 +101,9 @@ else:
         has_req = "req" in m_norm
         has_max = "max" in m_norm
         has_min = "min" in m_norm
-        if has_req and has_max:
-            return 'solid'
-        elif has_req and has_min:
+        if has_req:
+            return 'dash'
+        elif has_req:
             return 'dash'
         else:
             return 'solid'
