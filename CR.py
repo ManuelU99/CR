@@ -103,7 +103,7 @@ else:
         has_min = "min" in m_norm or "mín" in m_norm
 
         if has_req and has_max:
-            return 'dot'
+            return 'dash'
         elif has_req and has_min:
             return 'dot'
         else:
@@ -114,21 +114,20 @@ else:
     long_df['ColorHex'] = long_df['Measurement'].apply(assign_color)
     long_df['LineDash'] = long_df['Measurement'].apply(assign_dash)
 
-    # Combine Legend + LineDash internally to force unique series in Plotly
-    long_df['LegendUnique'] = long_df['MeasurementClean'] + ' (Soaking ' + long_df[column_f].astype(str) + ') [' + long_df['LineDash'] + ']'
-    # Clean Legend for display (no dash info)
-    long_df['LegendClean'] = long_df['MeasurementClean'] + ' (Soaking ' + long_df[column_f].astype(str) + ')'
+    # Combine Legend + LineDash internally (for Plotly series separation)
+    long_df['LegendUnique'] = long_df['MeasurementClean'] + ' (Soaking ' + long_df[column_f].astype(str) + ')'
+    long_df['LegendUniqueDash'] = long_df['LegendUnique'] + ' [' + long_df['LineDash'] + ']'  # only for backend
 
-    # Create color map per unique LegendUnique
-    color_discrete_map = dict(zip(long_df['LegendUnique'], long_df['ColorHex']))
-    legend_name_map = dict(zip(long_df['LegendUnique'], long_df['LegendClean']))
+    # Create color map per unique LegendUniqueDash
+    color_discrete_map = dict(zip(long_df['LegendUniqueDash'], long_df['ColorHex']))
+    legend_name_map = dict(zip(long_df['LegendUniqueDash'], long_df['LegendUnique']))  # clean legend
 
     # Plot
     fig = px.line(
         long_df,
         x='Temp',
         y='Value',
-        color='LegendUnique',
+        color='LegendUniqueDash',
         line_dash='LineDash',
         color_discrete_map=color_discrete_map,
         markers=True,
@@ -136,7 +135,7 @@ else:
         labels={'Temp': 'Temp', 'Value': 'Value'}
     )
 
-    # Update traces: overwrite legend names + hovertemplate
+    # Update traces: overwrite legend names (remove dash info) + hovertemplate
     fig.for_each_trace(lambda t: t.update(
         name=legend_name_map.get(t.name, t.name),
         hovertemplate='<b>%{fullData.name}</b><br>Temp=%{x}<br>Value=%{y}<extra></extra>'
