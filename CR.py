@@ -24,7 +24,13 @@ column_f = df.columns[5]  # Tubo
 df['Muestra'] = df[column_e].str.split('-').str[0]
 df['Temp'] = df[column_e].str.extract(r'-(?:[^-]*)-(\d+)').astype(float).round()
 
-# Calculate Muestra Instance (retest count)
+# Add RowNumber to preserve original file order
+df['RowNumber'] = df.reset_index().index
+
+# Sort by Tipo_Acero_Limpio, Muestra, Temp, RowNumber
+df.sort_values([column_a, 'Muestra', 'Temp', 'RowNumber'], inplace=True)
+
+# Calculate smarter MuestraInstance (appearance count)
 df['MuestraInstance'] = df.groupby([column_a, 'Muestra', 'Temp']).cumcount() + 1
 
 # Sidebar filters
