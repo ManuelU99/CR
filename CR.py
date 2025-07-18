@@ -22,6 +22,8 @@ column_f = df.columns[5]               # Tubo
 
 # Extract Temp (number after second '-')
 df['Temp'] = df[column_e].str.extract(r'-(?:[^-]*)-(\d+)').astype(float)
+df['Temp'] = df['Temp'].round()
+
 
 # Sidebar filters
 st.sidebar.header("Filters")
