@@ -115,7 +115,7 @@ else:
     long_df['LineDash'] = long_df['Measurement'].apply(assign_dash)
 
     # Combine Legend + LineDash internally to force unique series in Plotly
-    #long_df['LegendUnique'] = long_df['MeasurementClean'] + ' (Soaking ' + long_df[column_f].astype(str) + ') [' + long_df['LineDash'] + ']'
+    long_df['LegendUnique'] = long_df['MeasurementClean'] + ' (Soaking ' + long_df[column_f].astype(str) + ') [' + long_df['LineDash'] + ']'
     # Clean Legend for display (no dash info)
     long_df['LegendClean'] = long_df['MeasurementClean'] + ' (Soaking ' + long_df[column_f].astype(str) + ')'
 
