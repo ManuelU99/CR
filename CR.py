@@ -18,7 +18,7 @@ columns_charpy = df.columns[33:44]
 column_a = df.columns[0]  # Tipo_Acero_Limpio
 column_b = df.columns[1]  # Grado_Acero
 column_c = df.columns[2]  # Ciclo
-column_d = df.columns[3]  # Familia ✅
+column_d = df.columns[3]  # Familia
 column_e = df.columns[4]  # Muestra_Probeta_Temp
 column_f = df.columns[5]  # Tubo
 
@@ -28,33 +28,38 @@ df['Muestra'] = split_cols[0]
 df['Probeta'] = split_cols[1]
 df['Temp'] = split_cols[2].astype(float).round()
 
-# Sidebar filters — step by step, each one narrowing down the next
+# Start filtering with full df
+df_filtered = df.copy()
+
+# Sidebar filters (smart bidirectional!)
 st.sidebar.header("Filters")
 
-# Filter 1: Familia
-all_familia = sorted(df[column_d].dropna().unique())
-selected_familia = st.sidebar.multiselect("Select Familia", all_familia, default=all_familia)
-df_filtered = df[df[column_d].isin(selected_familia)]
+# Step 1: Familia
+all_familia = sorted(df_filtered[column_d].dropna().unique())
+selected_familia = st.sidebar.multiselect("Select Familia", all_familia)
+if selected_familia:
+    df_filtered = df_filtered[df_filtered[column_d].isin(selected_familia)]
 
-# Filter 2: Tipo_Acero_Limpio (depends on selected Familia)
+# Step 2: Tipo_Acero_Limpio (update options after Familia)
 all_tipo = sorted(df_filtered[column_a].dropna().unique())
-selected_tipo = st.sidebar.multiselect("Select Tipo_Acero_Limpio", all_tipo, default=all_tipo)
-df_filtered = df_filtered[df_filtered[column_a].isin(selected_tipo)]
+selected_tipo = st.sidebar.multiselect("Select Tipo_Acero_Limpio", all_tipo)
+if selected_tipo:
+    df_filtered = df_filtered[df_filtered[column_a].isin(selected_tipo)]
 
-# Filter 3: Ciclo (depends on Tipo_Acero_Limpio and Familia)
+# Step 3: Ciclo (update options after above)
 all_ciclos = sorted(df_filtered[column_c].dropna().unique())
-selected_ciclo = st.sidebar.multiselect("Select Ciclo", all_ciclos, default=all_ciclos)
-df_filtered = df_filtered[df_filtered[column_c].isin(selected_ciclo)]
+selected_ciclo = st.sidebar.multiselect("Select Ciclo", all_ciclos)
+if selected_ciclo:
+    df_filtered = df_filtered[df_filtered[column_c].isin(selected_ciclo)]
 
-# Filter 4: Soaking (depends on above)
+# Step 4: Soaking (update options after above)
 all_soaking = sorted(df_filtered[column_f].dropna().unique())
-selected_soaking = st.sidebar.multiselect("Select Soaking", all_soaking, default=all_soaking)
-df_filtered = df_filtered[df_filtered[column_f].isin(selected_soaking)]
+selected_soaking = st.sidebar.multiselect("Select Soaking", all_soaking)
+if selected_soaking:
+    df_filtered = df_filtered[df_filtered[column_f].isin(selected_soaking)]
 
-# Select test type
+# Step 5: Test Type
 test_type = st.sidebar.selectbox("Select Test Type", ["Traccion", "Dureza", "Charpy"])
-
-# Map to columns
 if test_type == "Traccion":
     selected_columns = columns_traccion
 elif test_type == "Dureza":
@@ -119,13 +124,11 @@ else:
         else:
             return 'solid'
 
-    # Apply assignments
     long_df['MeasurementClean'] = long_df['Measurement'].str.replace(r'\(merged\)', '', regex=True).str.strip()
     long_df['ColorHex'] = long_df['Measurement'].apply(assign_color)
     long_df['LineDash'] = long_df['Measurement'].apply(assign_dash)
     long_df['Legend'] = long_df['MeasurementClean'] + ' (Soaking ' + long_df[column_f].astype(str) + ')'
 
-    # Plotly graph
     fig = go.Figure()
 
     for (legend, color, dash), group in long_df.groupby(['Legend', 'ColorHex', 'LineDash']):
