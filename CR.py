@@ -7,7 +7,7 @@ import unicodedata
 st.set_page_config(page_title="Dashboard - Curvas de Revenido", layout="wide")
 
 # Load data
-file_path = "data_bi_CR.csv"
+file_path = "data_bi_CR2.csv"
 df = pd.read_csv(file_path)
 
 # Define key columns
