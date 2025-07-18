@@ -79,9 +79,13 @@ else:
             return '#00009A'
         if "dureza" in m_norm and "prom" in m_norm and "min" in m_norm:
             return '#1F7CC7'
-        if "energ" in m_norm:
+        if "energ" in m_norm and "ind":
             return '#CC0066'
-        if "area" in m_norm:
+        if "energ" in m_norm and "prom":
+            return '#00009A'
+        if "area" in m_norm  and "ind":
+            return '#009900'
+        if "area" in m_norm  and "prom":
             return '#009900'
         return '#999999'
 
