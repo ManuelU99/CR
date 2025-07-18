@@ -85,7 +85,7 @@ else:
             return '#009900'
         if "area" in m_norm and "prom" in m_norm:
             return '#009900'
-        return '#999999'
+        return "#000000"
 
     def assign_dash(m):
         m_norm = normalize(m)
