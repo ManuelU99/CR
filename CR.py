@@ -148,8 +148,19 @@ else:
             prev_status = match["IsCorrect"].values[-1]
             prev_reason = match["Reason"].values[-1]
             st.info(f"📝 Previous feedback found: {prev_status} | Reason: {prev_reason}")
+            default_selection = prev_status
         else:
             st.info("ℹ️ No previous feedback found for this graph.")
+            default_selection = "Yes"  # or set to None if you want no preselection
+
+        # Graph Quality Check input
+        st.subheader("✅ Graph Quality Check")
+        is_correct = st.radio(
+            "Is this graph correct?",
+            ("Yes", "No"),
+            index=0 if default_selection == "Yes" else 1
+)
+
 
     # --- Save new feedback and prepare for download ---
     if len(selected_tipo) == 1 and len(selected_ciclo) == 1:
