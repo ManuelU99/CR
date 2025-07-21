@@ -1,4 +1,4 @@
 Familia,Tipo_Acero_Limpio,Ciclo,Soaking,GroupNumber,TestType,IsCorrect,Reason
 1035,DS035,35822,5,1,Traccion,No,prueba
-T95,DS308,85162,15,1,Traccion,No,Graph in the original data plots points from different groups. Please check the Excel file
+T95,DS308,85162,15,1,Traccion,No,Graph from the original data is different because it plots data points from different groups. Please check the Excel file
 T95,DS308,85162,15,2,Traccion,No,pruebita
