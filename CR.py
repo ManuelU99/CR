@@ -136,13 +136,14 @@ else:
     existing_feedback = None
     if feedback_df is not None:
         match = feedback_df[
-            (feedback_df["Familia"] == ",".join(selected_familia)) &
-            (feedback_df["Tipo_Acero_Limpio"] == selected_tipo[0]) &
-            (feedback_df["Ciclo"] == selected_ciclo[0]) &
-            (feedback_df["Soaking"] == ",".join(selected_soaking)) &
-            (feedback_df["GroupNumber"] == ",".join([str(g) for g in selected_groups])) &
-            (feedback_df["TestType"] == test_type)
+            (feedback_df["Familia"].astype(str) == str(selected_familia[0])) &
+            (feedback_df["Tipo_Acero_Limpio"].astype(str) == str(selected_tipo[0])) &
+            (feedback_df["Ciclo"].astype(str) == str(selected_ciclo[0])) &
+            (feedback_df["Soaking"].astype(str) == str(selected_soaking[0])) &
+            (feedback_df["GroupNumber"].astype(str) == str(selected_groups[0])) &
+            (feedback_df["TestType"].astype(str) == str(test_type))
         ]
+
         if not match.empty:
             prev_status = match["IsCorrect"].values[-1]
             prev_reason = match["Reason"].values[-1]
