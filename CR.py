@@ -11,47 +11,51 @@ file_path = "data_bi_CR2.csv"
 df = pd.read_csv(file_path)
 
 # Define key columns
-column_a = df.columns[0]  # Tipo_Acero_Limpio
-column_b = df.columns[1]  # Grado_Acero
-column_c = df.columns[2]  # Ciclo
-column_d = df.columns[3]  # Familia
-column_e = df.columns[4]  # Muestra_Probeta_Temp
-column_j = df.columns[9]  # Tubo
+column_a = df.columns[0]   # Tipo_Acero_Limpio
+column_b = df.columns[1]   # Grado_Acero
+column_c = df.columns[2]   # Ciclo
+column_d = df.columns[3]   # Familia
+column_e = df.columns[4]   # Muestra_Probeta_Temp
+column_muestra = df.columns[5]  # Muestra
+column_testtype = df.columns[6]  # Test type
+column_index = df.columns[7]     # Muestra_Temp_TestType_Index
+column_tipo_muestra = df.columns[8]  # Tipo de muestra (Sin °C)
+column_soaking = df.columns[9]   # Soaking
 
-columns_traccion = df.columns[10:22]
-columns_dureza = df.columns[23:30]
-columns_charpy = df.columns[31:42]
+columns_traccion = df.columns[10:23]  # K to W
+columns_dureza = df.columns[23:31]    # X to AE
+columns_charpy = df.columns[31:42]    # AF to AQ
 
-# Extract Muestra, Probeta, Temp
-split_cols = df[column_e].str.split('-', expand=True)
-df['Muestra'] = split_cols[0]
-df['Probeta'] = split_cols[1]
+# Future columns (ready for later)
+column_temp_ensayo_req = df.columns[42]  # AR
+column_full_file_path = df.columns[43]   # AS
+
+# Extract Temp from Muestra_Probeta_Temp
+split_cols = df[column_e].astype(str).str.split('-', expand=True)
+df['MuestraNum'] = split_cols[0]
+df['ProbetaNum'] = split_cols[1]
 df['Temp'] = split_cols[2].astype(float).round()
 
-# Sidebar filters (simple cascade: Familia → rest)
+# Sidebar filters (Familia cascades to rest)
 st.sidebar.header("Filters")
 
-# Step 1: Familia
 all_familia = sorted(df[column_d].dropna().unique())
 selected_familia = st.sidebar.multiselect("Select Familia", all_familia, default=all_familia)
 df_filtered = df[df[column_d].isin(selected_familia)]
 
-# Step 2: Tipo_Acero_Limpio (depends on Familia)
 all_tipo = sorted(df_filtered[column_a].dropna().unique())
 selected_tipo = st.sidebar.multiselect("Select Tipo_Acero_Limpio", all_tipo, default=all_tipo)
 df_filtered = df_filtered[df_filtered[column_a].isin(selected_tipo)]
 
-# Step 3: Ciclo (depends on above)
 all_ciclos = sorted(df_filtered[column_c].dropna().unique())
 selected_ciclo = st.sidebar.multiselect("Select Ciclo", all_ciclos, default=all_ciclos)
 df_filtered = df_filtered[df_filtered[column_c].isin(selected_ciclo)]
 
-# Step 4: Soaking (depends on above)
-all_soaking = sorted(df_filtered[column_j].dropna().unique())
+all_soaking = sorted(df_filtered[column_soaking].dropna().unique())
 selected_soaking = st.sidebar.multiselect("Select Soaking", all_soaking, default=all_soaking)
-df_filtered = df_filtered[df_filtered[column_j].isin(selected_soaking)]
+df_filtered = df_filtered[df_filtered[column_soaking].isin(selected_soaking)]
 
-# Step 5: Test type
+# Test type selection
 test_type = st.sidebar.selectbox("Select Test Type", ["Traccion", "Dureza", "Charpy"])
 selected_columns = (
     columns_traccion if test_type == "Traccion"
@@ -59,12 +63,15 @@ selected_columns = (
     else columns_charpy
 )
 
-# Check and plot
 if df_filtered.empty:
     st.warning("⚠ No data available for the selected filters.")
 else:
     long_df = df_filtered.melt(
-        id_vars=[column_a, column_c, column_d, column_e, column_j, 'Temp', 'Muestra', 'Probeta'],
+        id_vars=[
+            column_a, column_b, column_c, column_d, column_e, column_muestra,
+            column_testtype, column_index, column_tipo_muestra, column_soaking,
+            'Temp', 'MuestraNum', 'ProbetaNum'
+        ],
         value_vars=selected_columns,
         var_name='Measurement',
         value_name='Value'
@@ -116,9 +123,8 @@ else:
     long_df['MeasurementClean'] = long_df['Measurement'].str.replace(r'\(merged\)', '', regex=True).str.strip()
     long_df['ColorHex'] = long_df['Measurement'].apply(assign_color)
     long_df['LineDash'] = long_df['Measurement'].apply(assign_dash)
-    long_df['Legend'] = long_df['MeasurementClean'] + ' (Soaking ' + long_df[column_j].astype(str) + ')'
+    long_df['Legend'] = long_df['MeasurementClean'] + ' (Soaking ' + long_df[column_soaking].astype(str) + ')'
 
-    # Check if ≤100 points for data labels
     show_labels = len(long_df) <= 100
 
     fig = go.Figure()
@@ -141,7 +147,7 @@ else:
                 f"Temp: %{{x}}<br>"
                 f"Value: %{{y}}<extra></extra>"
             ),
-            customdata=group[['Muestra', 'Probeta']].values
+            customdata=group[['MuestraNum', 'ProbetaNum']].values
         ))
 
     fig.update_layout(
