@@ -85,7 +85,7 @@ if not match.empty:
 
 # Display Reason if exists
 if reason_text:
-    st.warning(f"⚠ Graph Quality Note: {reason_text}")
+    st.warning(f"⚠ Note for this graph: {reason_text}")
 
 if df_filtered.empty:
     st.warning("⚠ No data available for the selected filters.")
