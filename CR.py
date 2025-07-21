@@ -173,6 +173,13 @@ else:
     st.plotly_chart(fig, use_container_width=True)
 
     if st.checkbox("Show filtered data table"):
-        # Drop columns where all values are None/NaN before displaying
         df_display = df_filtered.dropna(axis=1, how='all')
-        st.write(df_display)
+
+        # Check if 'Full File Path' column exists
+        if 'Full File Path' in df_display.columns:
+            # Create clickable markdown links
+            df_display['Full File Path'] = df_display['Full File Path'].apply(
+                lambda x: f"[Open File]({x})" if pd.notna(x) else ""
+            )
+
+        st.write(df_display.to_html(escape=False), unsafe_allow_html=True)
