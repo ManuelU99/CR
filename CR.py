@@ -100,37 +100,57 @@ else:
     st.plotly_chart(fig, use_container_width=True)
 
     # Graph Quality Check interface storing locally in Excel
-    if len(selected_tipo) == 1 and len(selected_ciclo) == 1:
-        st.subheader("✅ Graph Quality Check")
-        is_correct = st.radio("Is this graph correct?", ("Yes", "No"))
-        reason = ""
+import os
 
-        if is_correct == "No":
-            reason = st.text_area("Please describe why the graph is incorrect:")
-            if reason:
-                entry = pd.DataFrame([{
-                    "Familia": ",".join(selected_familia),
-                    "Tipo_Acero_Limpio": selected_tipo[0],
-                    "Ciclo": selected_ciclo[0],
-                    "Soaking": ",".join(selected_soaking),
-                    "GroupNumber": ",".join([str(g) for g in selected_groups]),
-                    "TestType": test_type,
-                    "IsCorrect": is_correct,
-                    "Reason": reason
-                }])
-                try:
-                    if os.path.exists(local_csv_path):
-                        existing = pd.read_csv(local_csv_path)
-                        pd.concat([existing, entry], ignore_index=True).to_csv(local_csv_path, index=False)
-                    else:
-                        entry.to_csv(local_csv_path, index=False)
-                    st.success(f"✅ Feedback saved to: {local_csv_path}")
-                except Exception as e:
-                    st.error(f"❌ Error saving to Excel file: {e}")
-            else:
-                st.warning("⚠ Please provide a reason for marking as incorrect.")
+# Define path (make sure it's updated for your system)
+local_csv_path = r"C:\Users\60098360\Desktop\Python codes\Graph Quality Control Check.csv"
+
+if len(selected_tipo) == 1 and len(selected_ciclo) == 1:
+    st.subheader("✅ Graph Quality Check")
+    is_correct = st.radio("Is this graph correct?", ("Yes", "No"))
+    reason = ""
+
+    if is_correct == "No":
+        reason = st.text_area("Please describe why the graph is incorrect:")
+        if reason:
+            entry = pd.DataFrame([{
+                "Familia": ",".join(selected_familia),
+                "Tipo_Acero_Limpio": selected_tipo[0],
+                "Ciclo": selected_ciclo[0],
+                "Soaking": ",".join(selected_soaking),
+                "GroupNumber": ",".join([str(g) for g in selected_groups]),
+                "TestType": test_type,
+                "IsCorrect": is_correct,
+                "Reason": reason
+            }])
+
+            try:
+                st.write("🔧 DEBUG: Attempting to save feedback entry...")
+                st.write(f"🔧 DEBUG: Entry DataFrame:\n{entry}")
+                st.write(f"🔧 DEBUG: Target path: {local_csv_path}")
+
+                if os.path.exists(local_csv_path):
+                    st.write("🔧 DEBUG: File exists — reading existing data.")
+                    existing = pd.read_csv(local_csv_path)
+                    st.write(f"🔧 DEBUG: Existing file has {existing.shape[0]} rows and {existing.shape[1]} columns.")
+                    updated = pd.concat([existing, entry], ignore_index=True)
+                    updated.to_csv(local_csv_path, index=False)
+                    st.write("🔧 DEBUG: Data appended and saved to CSV.")
+                else:
+                    st.write("🔧 DEBUG: File does not exist — creating new CSV.")
+                    entry.to_csv(local_csv_path, index=False)
+                    st.write("🔧 DEBUG: New CSV created and saved.")
+
+                st.success(f"✅ Feedback saved to: {local_csv_path}")
+                st.write(f"✅ Rows saved now: {updated.shape[0] if 'updated' in locals() else entry.shape[0]}")
+
+            except Exception as e:
+                st.error(f"❌ Error saving to CSV file: {e}")
         else:
-            st.success("✅ Marked as CORRECT!")
+            st.warning("⚠ Please provide a reason for marking as incorrect.")
+    else:
+        st.success("✅ Marked as CORRECT!")
+
 
     # Show Full File Paths as clickable links
     st.subheader("📂 Full File Paths for Filtered Data")
