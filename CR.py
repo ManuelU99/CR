@@ -58,6 +58,11 @@ unique_groups = sorted(df_filtered['GroupNumber'].unique())
 selected_groups = st.sidebar.multiselect("Select Group Number", unique_groups, default=unique_groups)
 df_filtered = df_filtered[df_filtered['GroupNumber'].isin(selected_groups)]
 
+# Muestra selection (NEW FILTER ADDED HERE)
+all_muestras = sorted(df_filtered[column_muestra].dropna().unique())
+selected_muestras = st.sidebar.multiselect("Select Muestra", all_muestras, default=all_muestras)
+df_filtered = df_filtered[df_filtered[column_muestra].isin(selected_muestras)]
+
 # Test type selection
 test_type = st.sidebar.selectbox("Select Test Type", ["Traccion", "Dureza", "Charpy"])
 selected_columns = (
