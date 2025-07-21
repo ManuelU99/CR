@@ -3,14 +3,10 @@ import plotly.graph_objects as go
 import streamlit as st
 import unicodedata
 import re
-import os
 import io
 
 # Streamlit config
 st.set_page_config(page_title="Dashboard - Curvas de Revenido", layout="wide")
-
-# Define local CSV storage path
-local_csv_path = r"C:\Users\60098360\Desktop\Python codes\Graph Quality Control Check.csv"
 
 # Load data
 data_file_path = "data_bi_CR2.csv"
@@ -35,7 +31,7 @@ columns_charpy = df.columns[31:42]
 # Process Muestra and Temp
 df['MuestraNum'] = df[column_muestra].astype(str)
 df['Temp'] = pd.to_numeric(df[column_tipo_muestra], errors='coerce').round()
-df['GroupNumber'] = df[column_index].astype(str).apply(lambda x: int(re.findall(r'[TDC](\\d+)', x)[0]) if re.findall(r'[TDC](\\d+)', x) else 1)
+df['GroupNumber'] = df[column_index].astype(str).apply(lambda x: int(re.findall(r'[TDC](\d+)', x)[0]) if re.findall(r'[TDC](\d+)', x) else 1)
 
 # Sidebar filters
 st.sidebar.header("Filters")
@@ -126,7 +122,32 @@ else:
     )
     st.plotly_chart(fig, use_container_width=True)
 
-    # Graph Quality Check interface saving locally
+    # --- Upload feedback CSV ---
+    uploaded_feedback = st.file_uploader("Upload existing feedback CSV", type=["csv"])
+    feedback_df = None
+    if uploaded_feedback is not None:
+        feedback_df = pd.read_csv(uploaded_feedback)
+        st.success("✅ Feedback CSV loaded.")
+
+    # --- Check existing feedback ---
+    existing_feedback = None
+    if feedback_df is not None:
+        match = feedback_df[
+            (feedback_df["Familia"] == ",".join(selected_familia)) &
+            (feedback_df["Tipo_Acero_Limpio"] == selected_tipo[0]) &
+            (feedback_df["Ciclo"] == selected_ciclo[0]) &
+            (feedback_df["Soaking"] == ",".join(selected_soaking)) &
+            (feedback_df["GroupNumber"] == ",".join([str(g) for g in selected_groups])) &
+            (feedback_df["TestType"] == test_type)
+        ]
+        if not match.empty:
+            prev_status = match["IsCorrect"].values[-1]
+            prev_reason = match["Reason"].values[-1]
+            st.info(f"📝 Previous feedback found: {prev_status} | Reason: {prev_reason}")
+        else:
+            st.info("ℹ️ No previous feedback found for this graph.")
+
+    # --- Save new feedback and prepare for download ---
     if len(selected_tipo) == 1 and len(selected_ciclo) == 1:
         st.subheader("✅ Graph Quality Check")
         is_correct = st.radio("Is this graph correct?", ("Yes", "No"))
@@ -146,27 +167,19 @@ else:
                     "Reason": reason
                 }])
 
-                # Try to read existing data (optional, in-memory only)
-                try:
-                    if os.path.exists(local_csv_path) and os.path.getsize(local_csv_path) > 0:
-                        existing = pd.read_csv(local_csv_path)
-                        updated = pd.concat([existing, entry], ignore_index=True)
-                    else:
-                        updated = entry
-                except Exception:
+                # Merge with existing feedback if uploaded
+                if feedback_df is not None:
+                    updated = pd.concat([feedback_df, entry], ignore_index=True)
+                else:
                     updated = entry
 
-                # Show success message
-                st.success("✅ Feedback ready for download!")
-
-                # Prepare CSV in memory
                 csv_buffer = io.StringIO()
                 updated.to_csv(csv_buffer, index=False)
                 csv_data = csv_buffer.getvalue().encode('utf-8')
 
-                # Show download button
+                st.success("✅ Feedback ready for download!")
                 st.download_button(
-                    label="⬇️ Download Feedback CSV",
+                    label="⬇️ Download Updated Feedback CSV",
                     data=csv_data,
                     file_name="Graph_Quality_Control_Check.csv",
                     mime='text/csv'
@@ -176,6 +189,4 @@ else:
         else:
             st.success("✅ Marked as CORRECT!")
 
-
-    # Show Full File Paths as clickable links
     st.subheader("📂 Full File Paths for Filtered Data")
