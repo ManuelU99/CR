@@ -37,26 +37,30 @@ df['GroupNumber'] = df[column_index].astype(str).apply(lambda x: int(re.findall(
 # Sidebar filters
 st.sidebar.header("Filters")
 
+# Familia filter
 all_familia = sorted(df[column_d].dropna().unique())
 selected_familia = st.sidebar.multiselect("Select Familia", all_familia, default=all_familia)
 df_filtered = df[df[column_d].isin(selected_familia)]
 
+# Tipo_Acero_Limpio filter
 all_tipo = sorted(df_filtered[column_a].dropna().unique())
 selected_tipo = st.sidebar.multiselect("Select Tipo_Acero_Limpio", all_tipo, default=all_tipo)
 df_filtered = df_filtered[df_filtered[column_a].isin(selected_tipo)]
 
+# Ciclo filter
 all_ciclos = sorted(df_filtered[column_c].dropna().unique())
 selected_ciclo = st.sidebar.multiselect("Select Ciclo", all_ciclos, default=all_ciclos)
 df_filtered = df_filtered[df_filtered[column_c].isin(selected_ciclo)]
 
+# Soaking filter
 all_soaking = sorted(df_filtered[column_soaking].dropna().unique())
 selected_soaking = st.sidebar.multiselect("Select Soaking", all_soaking, default=all_soaking)
 df_filtered = df_filtered[df_filtered[column_soaking].isin(selected_soaking)]
 
-# Detect max group
-unique_groups = sorted(df_filtered['GroupNumber'].unique())
-selected_groups = st.sidebar.multiselect("Select Group Number", unique_groups, default=unique_groups)
-df_filtered = df_filtered[df_filtered['GroupNumber'].isin(selected_groups)]
+# Muestra filter (NEW!)
+all_muestras = sorted(df_filtered['MuestraNum'].dropna().unique())
+selected_muestras = st.sidebar.multiselect("Select Muestra", all_muestras, default=all_muestras)
+df_filtered = df_filtered[df_filtered['MuestraNum'].isin(selected_muestras)]
 
 # Test type selection
 test_type = st.sidebar.selectbox("Select Test Type", ["Traccion", "Dureza", "Charpy"])
@@ -169,6 +173,19 @@ else:
     )
 
     st.plotly_chart(fig, use_container_width=True)
+
+    # Feedback interface (NEW!)
+    st.subheader("✅ Graph Quality Check")
+    is_correct = st.radio("Is this graph correct?", ("Yes", "No"))
+
+    if is_correct == "No":
+        reason = st.text_area("Please describe why the graph is incorrect:")
+        if reason:
+            st.error(f"🚨 Marked as INCORRECT: {reason}")
+        else:
+            st.warning("⚠️ Please provide a reason for marking as incorrect.")
+    else:
+        st.success("✅ Marked as CORRECT!")
 
     if st.checkbox("Show filtered data table"):
         st.write(df_filtered)
