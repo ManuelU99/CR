@@ -194,5 +194,7 @@ else:
     # Show Full File Paths as clickable links
     st.subheader("📂 Full File Paths for Filtered Data")
     file_paths = df_filtered[[column_muestra, column_fullpath]].drop_duplicates()
-    file_paths['Link'] = file_paths[column_fullpath].apply(lambda x: f"[Open File]({x})")
-    st.write(file_paths[[column_muestra, 'Link']].to_markdown(index=False))
+
+    for _, row in file_paths.iterrows():
+        st.markdown(f"🔗 **{row[column_muestra]}**: [Open File]({row[column_fullpath]})")
+
