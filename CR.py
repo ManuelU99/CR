@@ -9,7 +9,7 @@ import os
 st.set_page_config(page_title="Dashboard - Curvas de Revenido", layout="wide")
 
 # Define local Excel storage path
-local_excel_path = r"C:\\Users\\60098360\\Desktop\\Python codes\\Graph Quality Control Check.xlsx"
+local_excel_path = r"C:\Users\60098360\Desktop\Python codes\Graph Quality Control Check.csv"
 
 # Load data
 data_file_path = "data_bi_CR2.csv"
