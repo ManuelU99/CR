@@ -26,15 +26,9 @@ columns_traccion = df.columns[10:23]  # K to W
 columns_dureza = df.columns[23:31]    # X to AE
 columns_charpy = df.columns[31:42]    # AF to AQ
 
-# Future columns (ready for later)
-column_temp_ensayo_req = df.columns[42]  # AR
-column_full_file_path = df.columns[43]   # AS
-
-# Extract Temp from Muestra_Probeta_Temp
-split_cols = df[column_e].astype(str).str.split('-', expand=True)
-df['MuestraNum'] = split_cols[0]
-df['ProbetaNum'] = split_cols[1]
-df['Temp'] = split_cols[2].astype(float).round()
+# Use provided columns directly
+df['MuestraNum'] = df[column_muestra].astype(str)
+df['Temp'] = pd.to_numeric(df[column_tipo_muestra], errors='coerce').round()
 
 # Sidebar filters (Familia cascades to rest)
 st.sidebar.header("Filters")
@@ -70,7 +64,7 @@ else:
         id_vars=[
             column_a, column_b, column_c, column_d, column_e, column_muestra,
             column_testtype, column_index, column_tipo_muestra, column_soaking,
-            'Temp', 'MuestraNum', 'ProbetaNum'
+            'Temp', 'MuestraNum'
         ],
         value_vars=selected_columns,
         var_name='Measurement',
@@ -143,11 +137,11 @@ else:
             textposition='top center',
             hovertemplate=(
                 f"<b>{legend}</b><br>"
-                f"Muestra: %{{customdata[0]}} / Probeta: %{{customdata[1]}}<br>"
+                f"Muestra: %{{customdata[0]}}<br>"
                 f"Temp: %{{x}}<br>"
                 f"Value: %{{y}}<extra></extra>"
             ),
-            customdata=group[['MuestraNum', 'ProbetaNum']].values
+            customdata=group[['MuestraNum']].values
         ))
 
     fig.update_layout(
