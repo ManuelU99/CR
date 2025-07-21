@@ -123,7 +123,7 @@ else:
     st.plotly_chart(fig, use_container_width=True)
 
     # --- Upload feedback CSV ---
-    feedback_url = "https://raw.githubusercontent.com/yourusername/yourrepo/main/Graph_Quality_Control_Check.csv"
+    feedback_url = 'https://raw.githubusercontent.com/ManuelU99/CR/main/Graph_Quality_Control_Check.csv'
     try:
         feedback_df = pd.read_csv(feedback_url)
         st.success("✅ Feedback CSV loaded from GitHub.")
