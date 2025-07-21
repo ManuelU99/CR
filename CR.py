@@ -74,7 +74,7 @@ df_qc = pd.read_csv(qc_file_path)
 
 # Find matching reason
 # Check only if one selection per filter
-reason_text = ""  # <-- define it no matter what
+reason_text = ""
 
 if (
     len(selected_tipo) == 1 and
@@ -82,17 +82,17 @@ if (
     len(selected_soaking) == 1
 ):
     match = df_qc[
-        (df_qc['Tipo_Acero_Limpio'] == selected_tipo[0]) &
-        (df_qc['Ciclo'] == selected_ciclo[0]) &
-        (df_qc['Soaking'] == selected_soaking[0]) &
-        (df_qc['TestType'] == test_type)
+        (df_qc['Tipo_Acero_Limpio'].astype(str) == str(selected_tipo[0])) &
+        (df_qc['Ciclo'].astype(str) == str(selected_ciclo[0])) &
+        (df_qc['Soaking'].astype(str) == str(selected_soaking[0])) &
+        (df_qc['TestType'].astype(str) == str(test_type))
     ]
     if not match.empty:
         reason_text = match.iloc[0]['Reason']
 
-# Now safe to check:
 if reason_text:
     st.warning(f"⚠ Note for this graph: {reason_text}")
+
 
 
 # Display Reason if exists
