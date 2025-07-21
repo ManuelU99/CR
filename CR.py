@@ -72,10 +72,8 @@ selected_columns = (
 qc_file_path = r"https://raw.githubusercontent.com/ManuelU99/CR/refs/heads/main/Graph_Quality_Control_Check.csv"
 df_qc = pd.read_csv(qc_file_path)
 
-# Find matching reason
-# Check only if one selection per filter
+# Find matching reason (check only if one selection per filter)
 reason_text = ""
-
 if (
     len(selected_tipo) == 1 and
     len(selected_ciclo) == 1 and
@@ -90,12 +88,7 @@ if (
     if not match.empty:
         reason_text = match.iloc[0]['Reason']
 
-# Only display once
-if reason_text:
-    st.warning(f"⚠ Note for this graph: {reason_text}")
-
-
-# Display Reason if exists
+# Only display warning once
 if reason_text:
     st.warning(f"⚠ Note for this graph: {reason_text}")
 
