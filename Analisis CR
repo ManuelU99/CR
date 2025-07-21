@@ -1,0 +1,82 @@
+import pandas as pd
+import plotly.graph_objects as go
+
+# Read CSV file
+file_path = r"C:\Users\60098360\Desktop\Excel files\Data bi CR.csv"
+df = pd.read_csv(file_path)
+
+# Define key columns
+columns_ht = df.columns[7:20]  # H to T
+column_a = df.columns[0]       # Tipo_Acero_Limpio
+column_e = df.columns[4]       # Muestra_Probeta_Temp
+column_f = df.columns[5]       # Tubo
+
+# Extract Temp: number after the second '-'
+df['Temp'] = df[column_e].str.extract(r'-(?:[^-]*)-(\d+)').astype(float)
+
+# Prepare long-format dataframe
+long_df = df.melt(
+    id_vars=[column_a, column_e, 'Temp', column_f],
+    value_vars=columns_ht,
+    var_name='Measurement',
+    value_name='Value'
+).dropna(subset=['Value', 'Temp'])
+
+# Add line style and legend name
+long_df['LineStyle'] = long_df['Measurement'].apply(lambda x: 'dash' if 'Req' in x else 'solid')
+long_df['Legend'] = long_df['Measurement'] + ' (Tubo ' + long_df[column_f].astype(str) + ')'
+
+# Get unique Tipo_Acero_Limpio values sorted alphabetically
+tipo_list = sorted(long_df[column_a].dropna().unique())
+series_per_tipo = long_df['Legend'].nunique()
+
+# Initialize figure
+fig = go.Figure()
+
+# Add traces for all Tipo_Acero_Limpio groups, but only show the first initially
+for tipo in tipo_list:
+    tipo_df = long_df[long_df[column_a] == tipo]
+    visible = (tipo == tipo_list[0])
+    for legend, group in tipo_df.groupby('Legend'):
+        linestyle = group['LineStyle'].iloc[0]
+        fig.add_trace(go.Scatter(
+            x=group['Temp'],
+            y=group['Value'],
+            mode='lines+markers',
+            name=f"{legend} | {tipo}",
+            line=dict(dash=linestyle),
+            visible=visible
+        ))
+
+# Create dropdown buttons to filter by Tipo_Acero_Limpio
+buttons = []
+for i, tipo in enumerate(tipo_list):
+    visibility = [False] * len(fig.data)
+    for j in range(len(fig.data)):
+        if tipo in fig.data[j].name:
+            visibility[j] = True
+    buttons.append(dict(
+        label=tipo,
+        method='update',
+        args=[{'visible': visibility},
+              {'title': f'CR - Tracción | Tipo_Acero_Limpio: {tipo}'}]
+    ))
+
+# Update layout with dropdown menu
+fig.update_layout(
+    updatemenus=[dict(
+        active=0,
+        buttons=buttons,
+        x=1.15, y=1,
+        xanchor='left',
+        yanchor='top'
+    )],
+    title=f'CR - Tracción | Tipo_Acero_Limpio: {tipo_list[0]}',
+    xaxis_title='Temp',
+    yaxis_title='Value',
+    legend_title='Series',
+    height=700,
+    width=1200
+)
+
+fig.show()
