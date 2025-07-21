@@ -96,7 +96,7 @@ else:
     fig.update_layout(title=f"Dashboard - Curvas de Revenido: {test_type}", xaxis_title='Temp', yaxis=dict(title='Value'), yaxis2=dict(title='Value (%)', overlaying='y', side='right'), legend_title='Series', height=700, width=1200, hovermode='x')
     st.plotly_chart(fig, use_container_width=True)
 
-    # Graph Quality Check interface with conditional CSV path prompt
+    # Graph Quality Check interface with conditional CSV/XLSX path prompt
     if len(selected_tipo) == 1 and len(selected_ciclo) == 1:
         st.subheader("✅ Graph Quality Check")
         is_correct = st.radio("Is this graph correct?", ("Yes", "No"))
@@ -104,7 +104,7 @@ else:
 
         if is_correct == "No":
             reason = st.text_area("Please describe why the graph is incorrect:")
-            file_path = st.text_input("Provide the full path to the shared CSV file (e.g., C:\\...\\Graph Quality Check.csv):")
+            file_path = st.text_input("Provide the full path to the shared CSV/XLSX file (e.g., C:\\...\\Graph Quality Check.csv or .xlsx):")
 
             if file_path and os.path.isfile(file_path):
                 entry = pd.DataFrame([{
@@ -118,11 +118,18 @@ else:
                     "Reason": reason
                 }])
                 try:
-                    existing = pd.read_csv(file_path)
-                    pd.concat([existing, entry], ignore_index=True).to_csv(file_path, index=False)
-                    st.success("✅ Feedback saved to CSV!")
+                    if file_path.lower().endswith('.csv'):
+                        existing = pd.read_csv(file_path)
+                        pd.concat([existing, entry], ignore_index=True).to_csv(file_path, index=False)
+                    elif file_path.lower().endswith('.xlsx'):
+                        existing = pd.read_excel(file_path)
+                        pd.concat([existing, entry], ignore_index=True).to_excel(file_path, index=False)
+                    else:
+                        st.error("❌ Unsupported file type. Please use a .csv or .xlsx file.")
+                        raise ValueError("Unsupported file type")
+                    st.success("✅ Feedback saved to file!")
                 except Exception as e:
-                    st.error(f"❌ Error saving to CSV: {e}")
+                    st.error(f"❌ Error saving to file: {e}")
             elif file_path:
                 st.warning("⚠ Provided file path does not exist.")
         else:
