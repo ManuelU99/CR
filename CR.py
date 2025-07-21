@@ -74,6 +74,8 @@ df_qc = pd.read_csv(qc_file_path)
 
 # Find matching reason
 # Check only if one selection per filter
+reason_text = ""  # <-- define it no matter what
+
 if (
     len(selected_tipo) == 1 and
     len(selected_ciclo) == 1 and
@@ -85,13 +87,12 @@ if (
         (df_qc['Soaking'] == selected_soaking[0]) &
         (df_qc['TestType'] == test_type)
     ]
-
-    reason_text = ""
     if not match.empty:
         reason_text = match.iloc[0]['Reason']
 
-    if reason_text:
-        st.warning(f"⚠ Graph Quality Note: {reason_text}")
+# Now safe to check:
+if reason_text:
+    st.warning(f"⚠ Note for this graph: {reason_text}")
 
 
 # Display Reason if exists
