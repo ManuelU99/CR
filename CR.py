@@ -5,30 +5,30 @@ import unicodedata
 import re
 import io
 
-# Streamlit config
 st.set_page_config(page_title="Dashboard - Curvas de Revenido", layout="wide")
 
-# Load data
+# Load main data
 data_file_path = "data_bi_CR2.csv"
 df = pd.read_csv(data_file_path)
 
+# Load feedback from GitHub
+feedback_url = 'https://raw.githubusercontent.com/ManuelU99/CR/main/Graph_Quality_Control_Check.csv'
+try:
+    feedback_df = pd.read_csv(feedback_url)
+    st.success("✅ Feedback CSV loaded from GitHub.")
+except Exception as e:
+    feedback_df = None
+    st.warning(f"⚠ Could not load feedback CSV from GitHub: {e}")
+
 # Define key columns
-column_a = df.columns[0]
-column_b = df.columns[1]
-column_c = df.columns[2]
-column_d = df.columns[3]
-column_e = df.columns[4]
-column_muestra = df.columns[5]
-column_testtype = df.columns[6]
-column_index = df.columns[7]
-column_tipo_muestra = df.columns[8]
-column_soaking = df.columns[9]
+column_a, column_b, column_c, column_d = df.columns[0:4]
+column_e, column_muestra, column_testtype = df.columns[4:7]
+column_index, column_tipo_muestra, column_soaking = df.columns[7:10]
 column_fullpath = df.columns[43]
 columns_traccion = df.columns[10:23]
 columns_dureza = df.columns[23:31]
 columns_charpy = df.columns[31:42]
 
-# Process Muestra and Temp
 df['MuestraNum'] = df[column_muestra].astype(str)
 df['Temp'] = pd.to_numeric(df[column_tipo_muestra], errors='coerce').round()
 df['GroupNumber'] = df[column_index].astype(str).apply(lambda x: int(re.findall(r'[TDC](\d+)', x)[0]) if re.findall(r'[TDC](\d+)', x) else 1)
@@ -54,12 +54,7 @@ selected_columns = columns_traccion if test_type == "Traccion" else columns_dure
 if df_filtered.empty:
     st.warning("⚠ No data available for the selected filters.")
 else:
-    long_df = df_filtered.melt(
-        id_vars=[column_a, column_b, column_c, column_d, column_e, column_muestra, column_testtype, column_index, column_tipo_muestra, column_soaking, 'Temp', 'MuestraNum', 'GroupNumber', column_fullpath],
-        value_vars=selected_columns,
-        var_name='Measurement',
-        value_name='Value'
-    ).dropna(subset=['Value', 'Temp'])
+    long_df = df_filtered.melt(id_vars=[column_a, column_b, column_c, column_d, column_e, column_muestra, column_testtype, column_index, column_tipo_muestra, column_soaking, 'Temp', 'MuestraNum', 'GroupNumber', column_fullpath], value_vars=selected_columns, var_name='Measurement', value_name='Value').dropna(subset=['Value', 'Temp'])
 
     def normalize(text):
         return unicodedata.normalize('NFKD', text.lower()).encode('ASCII', 'ignore').decode('utf-8')
@@ -88,7 +83,7 @@ else:
     long_df['MeasurementClean'] = long_df['Measurement'].str.replace(r'\(merged\)', '', regex=True).str.strip()
     long_df['ColorHex'] = long_df['Measurement'].apply(assign_color)
     long_df['LineDash'] = long_df['Measurement'].apply(assign_dash)
-    long_df['Legend'] = long_df['MeasurementClean'] + ' (Soaking ' + long_df[column_soaking].astype(str) + ')'
+    long_df['Legend'] = long_df['MeasurementClean'] + ' (Soaking ' + df_filtered[column_soaking].astype(str) + ')'
     long_df['IsPercentage'] = long_df['Measurement'].str.contains(r'\(%\)', regex=True)
 
     show_labels = len(long_df) <= 100
@@ -110,37 +105,17 @@ else:
             customdata=group[['MuestraNum']].values
         ))
 
-    fig.update_layout(
-        title=f"Dashboard - Curvas de Revenido: {test_type}",
-        xaxis_title='Temp',
-        yaxis=dict(title='Value'),
-        yaxis2=dict(title='Value (%)', overlaying='y', side='right'),
-        legend_title='Series',
-        height=700,
-        width=1200,
-        hovermode='x'
-    )
+    fig.update_layout(title=f"Dashboard - Curvas de Revenido: {test_type}", xaxis_title='Temp', yaxis=dict(title='Value'), yaxis2=dict(title='Value (%)', overlaying='y', side='right'), legend_title='Series', height=700, width=1200, hovermode='x')
     st.plotly_chart(fig, use_container_width=True)
 
-    # --- Upload feedback CSV ---
-    feedback_url = 'https://raw.githubusercontent.com/ManuelU99/CR/main/Graph_Quality_Control_Check.csv'
-    try:
-        feedback_df = pd.read_csv(feedback_url)
-        st.success("✅ Feedback CSV loaded from GitHub.")
-    except Exception as e:
-        feedback_df = None
-        st.warning(f"⚠ Could not load feedback CSV from GitHub: {e}")
-
-
-    # --- Check existing feedback ---
-    existing_feedback = None
-    if feedback_df is not None:
+    # Check existing feedback
+    if feedback_df is not None and len(selected_familia) == 1 and len(selected_tipo) == 1 and len(selected_ciclo) == 1 and len(selected_soaking) == 1 and len(selected_groups) == 1:
         match = feedback_df[
-            (feedback_df["Familia"] == ",".join(selected_familia)) &
+            (feedback_df["Familia"].astype(str) == str(selected_familia[0])) &
             (feedback_df["Tipo_Acero_Limpio"] == selected_tipo[0]) &
-            (feedback_df["Ciclo"] == selected_ciclo[0]) &
-            (feedback_df["Soaking"] == ",".join(selected_soaking)) &
-            (feedback_df["GroupNumber"] == ",".join([str(g) for g in selected_groups])) &
+            (feedback_df["Ciclo"].astype(str) == str(selected_ciclo[0])) &
+            (feedback_df["Soaking"].astype(str) == str(selected_soaking[0])) &
+            (feedback_df["GroupNumber"].astype(str) == str(selected_groups[0])) &
             (feedback_df["TestType"] == test_type)
         ]
         if not match.empty:
@@ -150,46 +125,41 @@ else:
         else:
             st.info("ℹ️ No previous feedback found for this graph.")
 
-    # --- Save new feedback and prepare for download ---
-    if len(selected_tipo) == 1 and len(selected_ciclo) == 1:
-        st.subheader("✅ Graph Quality Check")
-        is_correct = st.radio("Is this graph correct?", ("Yes", "No"))
-        reason = ""
-
-        if is_correct == "No":
-            reason = st.text_area("Please describe why the graph is incorrect:")
-            if reason:
-                entry = pd.DataFrame([{
-                    "Familia": ",".join(selected_familia),
-                    "Tipo_Acero_Limpio": selected_tipo[0],
-                    "Ciclo": selected_ciclo[0],
-                    "Soaking": ",".join(selected_soaking),
-                    "GroupNumber": ",".join([str(g) for g in selected_groups]),
-                    "TestType": test_type,
-                    "IsCorrect": is_correct,
-                    "Reason": reason
-                }])
-
-                # Merge with existing feedback if uploaded
-                if feedback_df is not None:
-                    updated = pd.concat([feedback_df, entry], ignore_index=True)
-                else:
-                    updated = entry
-
-                csv_buffer = io.StringIO()
-                updated.to_csv(csv_buffer, index=False)
-                csv_data = csv_buffer.getvalue().encode('utf-8')
-
-                st.success("✅ Feedback ready for download!")
-                st.download_button(
-                    label="⬇️ Download Updated Feedback CSV",
-                    data=csv_data,
-                    file_name="Graph_Quality_Control_Check.csv",
-                    mime='text/csv'
-                )
+    # Feedback input and download
+    st.subheader("✅ Graph Quality Check")
+    is_correct = st.radio("Is this graph correct?", ("Yes", "No"))
+    if is_correct == "No":
+        reason = st.text_area("Please describe why the graph is incorrect:")
+        if reason:
+            entry = pd.DataFrame([{
+                "Familia": selected_familia[0],
+                "Tipo_Acero_Limpio": selected_tipo[0],
+                "Ciclo": selected_ciclo[0],
+                "Soaking": selected_soaking[0],
+                "GroupNumber": str(selected_groups[0]),
+                "TestType": test_type,
+                "IsCorrect": is_correct,
+                "Reason": reason
+            }])
+            if feedback_df is not None:
+                updated = pd.concat([feedback_df, entry], ignore_index=True)
             else:
-                st.warning("⚠ Please provide a reason for marking as incorrect.")
+                updated = entry
+
+            csv_buffer = io.StringIO()
+            updated.to_csv(csv_buffer, index=False)
+            csv_data = csv_buffer.getvalue().encode('utf-8')
+            st.download_button(
+                label="⬇️ Download Updated Feedback CSV",
+                data=csv_data,
+                file_name="Graph_Quality_Control_Check.csv",
+                mime='text/csv'
+            )
+            st.success("✅ Feedback ready for download!")
         else:
-            st.success("✅ Marked as CORRECT!")
+            st.warning("⚠ Please provide a reason for marking as incorrect.")
+    else:
+        st.success("✅ Marked as CORRECT!")
+
 
     st.subheader("📂 Full File Paths for Filtered Data")
