@@ -2,6 +2,7 @@ import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
 import unicodedata
+import re
 
 # Streamlit config
 st.set_page_config(page_title="Dashboard - Curvas de Revenido", layout="wide")
@@ -22,15 +23,18 @@ column_index = df.columns[7]     # Muestra_Temp_TestType_Index
 column_tipo_muestra = df.columns[8]  # Tipo de muestra (Sin °C)
 column_soaking = df.columns[9]   # Soaking
 
-columns_traccion = df.columns[10:23]  # K to W
-columns_dureza = df.columns[23:31]    # X to AE
-columns_charpy = df.columns[31:42]    # AF to AQ
+columns_traccion = df.columns[10:23]
+columns_dureza = df.columns[23:31]
+columns_charpy = df.columns[31:42]
 
-# Use provided columns directly
+# Process Muestra and Temp
 df['MuestraNum'] = df[column_muestra].astype(str)
 df['Temp'] = pd.to_numeric(df[column_tipo_muestra], errors='coerce').round()
 
-# Sidebar filters (Familia cascades to rest)
+# Extract Group Number from Muestra_Temp_TestType_Index (last digit)
+df['GroupNumber'] = df[column_index].astype(str).apply(lambda x: int(re.findall(r'[TDC](\d+)', x)[0]) if re.findall(r'[TDC](\d+)', x) else 1)
+
+# Sidebar filters
 st.sidebar.header("Filters")
 
 all_familia = sorted(df[column_d].dropna().unique())
@@ -49,6 +53,11 @@ all_soaking = sorted(df_filtered[column_soaking].dropna().unique())
 selected_soaking = st.sidebar.multiselect("Select Soaking", all_soaking, default=all_soaking)
 df_filtered = df_filtered[df_filtered[column_soaking].isin(selected_soaking)]
 
+# Detect max group
+unique_groups = sorted(df_filtered['GroupNumber'].unique())
+selected_groups = st.sidebar.multiselect("Select Group Number", unique_groups, default=unique_groups)
+df_filtered = df_filtered[df_filtered['GroupNumber'].isin(selected_groups)]
+
 # Test type selection
 test_type = st.sidebar.selectbox("Select Test Type", ["Traccion", "Dureza", "Charpy"])
 selected_columns = (
@@ -64,7 +73,7 @@ else:
         id_vars=[
             column_a, column_b, column_c, column_d, column_e, column_muestra,
             column_testtype, column_index, column_tipo_muestra, column_soaking,
-            'Temp', 'MuestraNum'
+            'Temp', 'MuestraNum', 'GroupNumber'
         ],
         value_vars=selected_columns,
         var_name='Measurement',
