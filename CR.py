@@ -7,7 +7,7 @@ import re
 # Streamlit config
 st.set_page_config(page_title="Dashboard - Curvas de Revenido", layout="wide")
 
-# Load data
+# Load main data
 file_path = "data_bi_CR2.csv"
 df = pd.read_csv(file_path)
 
@@ -67,6 +67,25 @@ selected_columns = (
     else columns_dureza if test_type == "Dureza"
     else columns_charpy
 )
+
+# Load Quality Control CSV
+qc_file_path = r"C:\Users\60098360\Desktop\Python codes\Graph_Quality_Control_Check.csv"
+df_qc = pd.read_csv(qc_file_path)
+
+# Find matching reason
+match = df_qc[
+    (df_qc['Tipo_Acero_Limpio'].isin(selected_tipo)) &
+    (df_qc['Ciclo'].isin(selected_ciclo)) &
+    (df_qc['TestType'] == test_type)
+]
+
+reason_text = ""
+if not match.empty:
+    reason_text = match.iloc[0]['Reason']
+
+# Display Reason if exists
+if reason_text:
+    st.warning(f"⚠ Graph Quality Note: {reason_text}")
 
 if df_filtered.empty:
     st.warning("⚠ No data available for the selected filters.")
