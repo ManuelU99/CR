@@ -68,25 +68,20 @@ selected_columns = (
     else columns_charpy
 )
 
-# Load Quality Control CSV from GitHub (replace with your raw URL!)
-qc_file_path = "https://raw.githubusercontent.com/yourusername/yourrepo/main/Graph_Quality_Control_Check.csv"
+# Load Quality Control CSV
+qc_file_path = r"https://raw.githubusercontent.com/ManuelU99/CR/refs/heads/main/Graph_Quality_Control_Check.csv"
 df_qc = pd.read_csv(qc_file_path)
 
-# Find matching reason only if one item selected per filter
+# Find matching reason
+match = df_qc[
+    (df_qc['Tipo_Acero_Limpio'].isin(selected_tipo)) &
+    (df_qc['Ciclo'].isin(selected_ciclo)) &
+    (df_qc['TestType'] == test_type)
+]
+
 reason_text = ""
-if (
-    len(selected_tipo) == 1 and
-    len(selected_ciclo) == 1 and
-    len(selected_soaking) == 1
-):
-    match = df_qc[
-        (df_qc['Tipo_Acero_Limpio'] == selected_tipo[0]) &
-        (df_qc['Ciclo'] == selected_ciclo[0]) &
-        (df_qc['Soaking'] == selected_soaking[0]) &
-        (df_qc['TestType'] == test_type)
-    ]
-    if not match.empty:
-        reason_text = match.iloc[0]['Reason']
+if not match.empty:
+    reason_text = match.iloc[0]['Reason']
 
 # Display Reason if exists
 if reason_text:
