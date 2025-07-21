@@ -4,6 +4,7 @@ import streamlit as st
 import unicodedata
 import re
 import os
+import io
 
 # Streamlit config
 st.set_page_config(page_title="Dashboard - Curvas de Revenido", layout="wide")
@@ -145,21 +146,36 @@ else:
                     "Reason": reason
                 }])
 
+                # Try to read existing data (optional, in-memory only)
                 try:
                     if os.path.exists(local_csv_path) and os.path.getsize(local_csv_path) > 0:
                         existing = pd.read_csv(local_csv_path)
                         updated = pd.concat([existing, entry], ignore_index=True)
                     else:
                         updated = entry
+                except Exception:
+                    updated = entry
 
-                    updated.to_csv(local_csv_path, index=False)
-                    st.success(f"✅ Feedback saved to: {local_csv_path}")
-                except Exception as e:
-                    st.error(f"❌ Error saving to CSV file: {e}")
+                # Show success message
+                st.success("✅ Feedback ready for download!")
+
+                # Prepare CSV in memory
+                csv_buffer = io.StringIO()
+                updated.to_csv(csv_buffer, index=False)
+                csv_data = csv_buffer.getvalue().encode('utf-8')
+
+                # Show download button
+                st.download_button(
+                    label="⬇️ Download Feedback CSV",
+                    data=csv_data,
+                    file_name="Graph_Quality_Control_Check.csv",
+                    mime='text/csv'
+                )
             else:
                 st.warning("⚠ Please provide a reason for marking as incorrect.")
         else:
             st.success("✅ Marked as CORRECT!")
+
 
     # Show Full File Paths as clickable links
     st.subheader("📂 Full File Paths for Filtered Data")
