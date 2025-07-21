@@ -179,17 +179,19 @@ else:
     st.plotly_chart(fig, use_container_width=True)
 
     # Feedback interface
-    st.subheader("✅ Graph Quality Check")
-    is_correct = st.radio("Is this graph correct?", ("Yes", "No"))
+    if len(selected_tipo) == 1 and len(selected_ciclo) == 1:
+        st.subheader("✅ Graph Quality Check")
+        is_correct = st.radio("Is this graph correct?", ("Yes", "No"))
 
-    if is_correct == "No":
-        reason = st.text_area("Please describe why the graph is incorrect:")
-        if reason:
-            st.error(f"🚨 Marked as INCORRECT: {reason}")
+        if is_correct == "No":
+            reason = st.text_area("Please describe why the graph is incorrect:")
+            if reason:
+                st.error(f"🚨 Marked as INCORRECT: {reason}")
+            else:
+                st.warning("⚠️ Please provide a reason for marking as incorrect.")
         else:
-            st.warning("⚠️ Please provide a reason for marking as incorrect.")
-    else:
-        st.success("✅ Marked as CORRECT!")
+            st.success("✅ Marked as CORRECT!")
+
 
     # Show Full File Paths as clickable links
     st.subheader("📂 Full File Paths for Filtered Data")
