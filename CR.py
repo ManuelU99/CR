@@ -32,7 +32,9 @@ df['MuestraNum'] = df[column_muestra].astype(str)
 df['Temp'] = pd.to_numeric(df[column_tipo_muestra], errors='coerce').round()
 
 # Extract Group Number from Muestra_Temp_TestType_Index
-df['GroupNumber'] = df[column_index].astype(str).apply(lambda x: int(re.findall(r'[TDC](\d+)', x)[0]) if re.findall(r'[TDC](\d+)', x) else 1)
+df['GroupNumber'] = df[column_index].astype(str).apply(
+    lambda x: int(re.findall(r'[TDC](\d+)', x)[0]) if re.findall(r'[TDC](\d+)', x) else 1
+)
 
 # Sidebar filters
 st.sidebar.header("Filters")
@@ -171,4 +173,6 @@ else:
     st.plotly_chart(fig, use_container_width=True)
 
     if st.checkbox("Show filtered data table"):
-        st.write(df_filtered)
+        # Drop columns where all values are None/NaN before displaying
+        df_display = df_filtered.dropna(axis=1, how='all')
+        st.write(df_display)
