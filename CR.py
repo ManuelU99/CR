@@ -8,8 +8,8 @@ import os
 # Streamlit config
 st.set_page_config(page_title="Dashboard - Curvas de Revenido", layout="wide")
 
-# Define local CSV storage path
-local_csv_path = r"C:\Users\60098360\Desktop\Python codes\Graph Quality Control Check.xlsx"
+# Define local Excel storage path
+local_excel_path = r"C:\\Users\\60098360\\Desktop\\Python codes\\Graph Quality Control Check.xlsx"
 
 # Load data
 data_file_path = "data_bi_CR2.csv"
@@ -99,7 +99,7 @@ else:
     fig.update_layout(title=f"Dashboard - Curvas de Revenido: {test_type}", xaxis_title='Temp', yaxis=dict(title='Value'), yaxis2=dict(title='Value (%)', overlaying='y', side='right'), legend_title='Series', height=700, width=1200, hovermode='x')
     st.plotly_chart(fig, use_container_width=True)
 
-    # Graph Quality Check interface storing locally
+    # Graph Quality Check interface storing locally in Excel
     if len(selected_tipo) == 1 and len(selected_ciclo) == 1:
         st.subheader("✅ Graph Quality Check")
         is_correct = st.radio("Is this graph correct?", ("Yes", "No"))
@@ -119,14 +119,14 @@ else:
                     "Reason": reason
                 }])
                 try:
-                    if os.path.exists(local_csv_path):
-                        existing = pd.read_csv(local_csv_path)
-                        pd.concat([existing, entry], ignore_index=True).to_csv(local_csv_path, index=False)
+                    if os.path.exists(local_excel_path):
+                        existing = pd.read_excel(local_excel_path)
+                        pd.concat([existing, entry], ignore_index=True).to_excel(local_excel_path, index=False)
                     else:
-                        entry.to_csv(local_csv_path, index=False)
-                    st.success(f"✅ Feedback saved to: {local_csv_path}")
+                        entry.to_excel(local_excel_path, index=False)
+                    st.success(f"✅ Feedback saved to: {local_excel_path}")
                 except Exception as e:
-                    st.error(f"❌ Error saving to file: {e}")
+                    st.error(f"❌ Error saving to Excel file: {e}")
             else:
                 st.warning("⚠ Please provide a reason for marking as incorrect.")
         else:
