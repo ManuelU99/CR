@@ -8,6 +8,9 @@ import os
 # Streamlit config
 st.set_page_config(page_title="Dashboard - Curvas de Revenido", layout="wide")
 
+# Define local CSV storage path
+local_csv_path = r"C:\\Users\\60098360\\Desktop\\Python codes\\Graph Quality Check.csv"
+
 # Load data
 data_file_path = "data_bi_CR2.csv"
 df = pd.read_csv(data_file_path)
@@ -96,7 +99,7 @@ else:
     fig.update_layout(title=f"Dashboard - Curvas de Revenido: {test_type}", xaxis_title='Temp', yaxis=dict(title='Value'), yaxis2=dict(title='Value (%)', overlaying='y', side='right'), legend_title='Series', height=700, width=1200, hovermode='x')
     st.plotly_chart(fig, use_container_width=True)
 
-    # Graph Quality Check interface with conditional CSV/XLSX path prompt
+    # Graph Quality Check interface storing locally
     if len(selected_tipo) == 1 and len(selected_ciclo) == 1:
         st.subheader("✅ Graph Quality Check")
         is_correct = st.radio("Is this graph correct?", ("Yes", "No"))
@@ -104,9 +107,7 @@ else:
 
         if is_correct == "No":
             reason = st.text_area("Please describe why the graph is incorrect:")
-            file_path = st.text_input("Provide the full path to the shared CSV/XLSX file (e.g., C:\\...\\Graph Quality Check.csv or .xlsx):")
-
-            if file_path and os.path.isfile(file_path):
+            if reason:
                 entry = pd.DataFrame([{
                     "Familia": ",".join(selected_familia),
                     "Tipo_Acero_Limpio": selected_tipo[0],
@@ -118,20 +119,16 @@ else:
                     "Reason": reason
                 }])
                 try:
-                    if file_path.lower().endswith('.csv'):
-                        existing = pd.read_csv(file_path)
-                        pd.concat([existing, entry], ignore_index=True).to_csv(file_path, index=False)
-                    elif file_path.lower().endswith('.xlsx'):
-                        existing = pd.read_excel(file_path)
-                        pd.concat([existing, entry], ignore_index=True).to_excel(file_path, index=False)
+                    if os.path.exists(local_csv_path):
+                        existing = pd.read_csv(local_csv_path)
+                        pd.concat([existing, entry], ignore_index=True).to_csv(local_csv_path, index=False)
                     else:
-                        st.error("❌ Unsupported file type. Please use a .csv or .xlsx file.")
-                        raise ValueError("Unsupported file type")
-                    st.success("✅ Feedback saved to file!")
+                        entry.to_csv(local_csv_path, index=False)
+                    st.success(f"✅ Feedback saved to: {local_csv_path}")
                 except Exception as e:
                     st.error(f"❌ Error saving to file: {e}")
-            elif file_path:
-                st.warning("⚠ Provided file path does not exist.")
+            else:
+                st.warning("⚠ Please provide a reason for marking as incorrect.")
         else:
             st.success("✅ Marked as CORRECT!")
 
