@@ -69,7 +69,7 @@ selected_columns = (
 )
 
 # Load Quality Control CSV
-qc_file_path = r"C:\Users\60098360\Desktop\Python codes\Graph_Quality_Control_Check.csv"
+qc_file_path = r"https://raw.githubusercontent.com/ManuelU99/CR/refs/heads/main/Graph_Quality_Control_Check.csv"
 df_qc = pd.read_csv(qc_file_path)
 
 # Find matching reason
