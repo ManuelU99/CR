@@ -22,6 +22,7 @@ column_testtype = df.columns[6]  # Test type
 column_index = df.columns[7]     # Muestra_Temp_TestType_Index
 column_tipo_muestra = df.columns[8]  # Tipo de muestra (Sin °C)
 column_soaking = df.columns[9]   # Soaking
+column_fullpath = df.columns[43] # Full File Path
 
 columns_traccion = df.columns[10:23]
 columns_dureza = df.columns[23:31]
@@ -57,10 +58,15 @@ all_soaking = sorted(df_filtered[column_soaking].dropna().unique())
 selected_soaking = st.sidebar.multiselect("Select Soaking", all_soaking, default=all_soaking)
 df_filtered = df_filtered[df_filtered[column_soaking].isin(selected_soaking)]
 
-# Muestra filter (NEW!)
+# Muestra filter
 all_muestras = sorted(df_filtered['MuestraNum'].dropna().unique())
 selected_muestras = st.sidebar.multiselect("Select Muestra", all_muestras, default=all_muestras)
 df_filtered = df_filtered[df_filtered['MuestraNum'].isin(selected_muestras)]
+
+# GroupNumber filter (RESTORED!)
+unique_groups = sorted(df_filtered['GroupNumber'].unique())
+selected_groups = st.sidebar.multiselect("Select Group Number", unique_groups, default=unique_groups)
+df_filtered = df_filtered[df_filtered['GroupNumber'].isin(selected_groups)]
 
 # Test type selection
 test_type = st.sidebar.selectbox("Select Test Type", ["Traccion", "Dureza", "Charpy"])
@@ -77,7 +83,7 @@ else:
         id_vars=[
             column_a, column_b, column_c, column_d, column_e, column_muestra,
             column_testtype, column_index, column_tipo_muestra, column_soaking,
-            'Temp', 'MuestraNum', 'GroupNumber'
+            'Temp', 'MuestraNum', 'GroupNumber', column_fullpath
         ],
         value_vars=selected_columns,
         var_name='Measurement',
@@ -131,8 +137,6 @@ else:
     long_df['ColorHex'] = long_df['Measurement'].apply(assign_color)
     long_df['LineDash'] = long_df['Measurement'].apply(assign_dash)
     long_df['Legend'] = long_df['MeasurementClean'] + ' (Soaking ' + long_df[column_soaking].astype(str) + ')'
-
-    # Check for percentage series
     long_df['IsPercentage'] = long_df['Measurement'].str.contains(r'\(%\)', regex=True)
 
     show_labels = len(long_df) <= 100
@@ -174,7 +178,7 @@ else:
 
     st.plotly_chart(fig, use_container_width=True)
 
-    # Feedback interface (NEW!)
+    # Feedback interface
     st.subheader("✅ Graph Quality Check")
     is_correct = st.radio("Is this graph correct?", ("Yes", "No"))
 
@@ -187,5 +191,8 @@ else:
     else:
         st.success("✅ Marked as CORRECT!")
 
-    if st.checkbox("Show filtered data table"):
-        st.write(df_filtered)
+    # Show Full File Paths as clickable links
+    st.subheader("📂 Full File Paths for Filtered Data")
+    file_paths = df_filtered[[column_muestra, column_fullpath]].drop_duplicates()
+    file_paths['Link'] = file_paths[column_fullpath].apply(lambda x: f"[Open File]({x})")
+    st.write(file_paths[[column_muestra, 'Link']].to_markdown(index=False))
