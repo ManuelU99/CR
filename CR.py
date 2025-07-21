@@ -8,7 +8,7 @@ import os
 # Streamlit config
 st.set_page_config(page_title="Dashboard - Curvas de Revenido", layout="wide")
 
-# Define local Excel storage path
+# Define local CSV storage path
 local_csv_path = r"C:\Users\60098360\Desktop\Python codes\Graph Quality Control Check.csv"
 
 # Load data
@@ -34,7 +34,7 @@ columns_charpy = df.columns[31:42]
 # Process Muestra and Temp
 df['MuestraNum'] = df[column_muestra].astype(str)
 df['Temp'] = pd.to_numeric(df[column_tipo_muestra], errors='coerce').round()
-df['GroupNumber'] = df[column_index].astype(str).apply(lambda x: int(re.findall(r'[TDC](\d+)', x)[0]) if re.findall(r'[TDC](\d+)', x) else 1)
+df['GroupNumber'] = df[column_index].astype(str).apply(lambda x: int(re.findall(r'[TDC](\\d+)', x)[0]) if re.findall(r'[TDC](\\d+)', x) else 1)
 
 # Sidebar filters
 st.sidebar.header("Filters")
@@ -57,7 +57,12 @@ selected_columns = columns_traccion if test_type == "Traccion" else columns_dure
 if df_filtered.empty:
     st.warning("⚠ No data available for the selected filters.")
 else:
-    long_df = df_filtered.melt(id_vars=[column_a, column_b, column_c, column_d, column_e, column_muestra, column_testtype, column_index, column_tipo_muestra, column_soaking, 'Temp', 'MuestraNum', 'GroupNumber', column_fullpath], value_vars=selected_columns, var_name='Measurement', value_name='Value').dropna(subset=['Value', 'Temp'])
+    long_df = df_filtered.melt(
+        id_vars=[column_a, column_b, column_c, column_d, column_e, column_muestra, column_testtype, column_index, column_tipo_muestra, column_soaking, 'Temp', 'MuestraNum', 'GroupNumber', column_fullpath],
+        value_vars=selected_columns,
+        var_name='Measurement',
+        value_name='Value'
+    ).dropna(subset=['Value', 'Temp'])
 
     def normalize(text):
         return unicodedata.normalize('NFKD', text.lower()).encode('ASCII', 'ignore').decode('utf-8')
@@ -83,11 +88,11 @@ else:
         if "req" in m_norm and ("min" in m_norm or "mín" in m_norm): return 'dot'
         return 'solid'
 
-    long_df['MeasurementClean'] = long_df['Measurement'].str.replace(r'\\(merged\\)', '', regex=True).str.strip()
+    long_df['MeasurementClean'] = long_df['Measurement'].str.replace(r'\(merged\)', '', regex=True).str.strip()
     long_df['ColorHex'] = long_df['Measurement'].apply(assign_color)
     long_df['LineDash'] = long_df['Measurement'].apply(assign_dash)
     long_df['Legend'] = long_df['MeasurementClean'] + ' (Soaking ' + long_df[column_soaking].astype(str) + ')'
-    long_df['IsPercentage'] = long_df['Measurement'].str.contains(r'\\(%\\)', regex=True)
+    long_df['IsPercentage'] = long_df['Measurement'].str.contains(r'\(%\)', regex=True)
 
     show_labels = len(long_df) <= 100
 
@@ -95,62 +100,66 @@ else:
     for (legend, color, dash, is_percentage), group in long_df.groupby(['Legend', 'ColorHex', 'LineDash', 'IsPercentage']):
         legend_norm = normalize(legend)
         show_text = group['Value'] if ('req' not in legend_norm and show_labels) else None
-        fig.add_trace(go.Scatter(x=group['Temp'], y=group['Value'], mode='lines+markers+text' if show_text is not None else 'lines+markers', name=legend, line=dict(color=color, dash=dash), text=show_text, textposition='top center', yaxis='y2' if is_percentage else 'y', hovertemplate=f"<b>{legend}</b><br>Muestra: %{{customdata[0]}}<br>Temp: %{{x}}<br>Value: %{{y}}<extra></extra>", customdata=group[['MuestraNum']].values))
-    fig.update_layout(title=f"Dashboard - Curvas de Revenido: {test_type}", xaxis_title='Temp', yaxis=dict(title='Value'), yaxis2=dict(title='Value (%)', overlaying='y', side='right'), legend_title='Series', height=700, width=1200, hovermode='x')
+        fig.add_trace(go.Scatter(
+            x=group['Temp'],
+            y=group['Value'],
+            mode='lines+markers+text' if show_text is not None else 'lines+markers',
+            name=legend,
+            line=dict(color=color, dash=dash),
+            text=show_text,
+            textposition='top center',
+            yaxis='y2' if is_percentage else 'y',
+            hovertemplate=f"<b>{legend}</b><br>Muestra: %{{customdata[0]}}<br>Temp: %{{x}}<br>Value: %{{y}}<extra></extra>",
+            customdata=group[['MuestraNum']].values
+        ))
+
+    fig.update_layout(
+        title=f"Dashboard - Curvas de Revenido: {test_type}",
+        xaxis_title='Temp',
+        yaxis=dict(title='Value'),
+        yaxis2=dict(title='Value (%)', overlaying='y', side='right'),
+        legend_title='Series',
+        height=700,
+        width=1200,
+        hovermode='x'
+    )
     st.plotly_chart(fig, use_container_width=True)
 
-    # Graph Quality Check interface storing locally in Excel
-import os
+    # Graph Quality Check interface saving locally
+    if len(selected_tipo) == 1 and len(selected_ciclo) == 1:
+        st.subheader("✅ Graph Quality Check")
+        is_correct = st.radio("Is this graph correct?", ("Yes", "No"))
+        reason = ""
 
-# Define path (make sure it's updated for your system)
-local_csv_path = r"C:\Users\60098360\Desktop\Python codes\Graph Quality Control Check.csv"
+        if is_correct == "No":
+            reason = st.text_area("Please describe why the graph is incorrect:")
+            if reason:
+                entry = pd.DataFrame([{
+                    "Familia": ",".join(selected_familia),
+                    "Tipo_Acero_Limpio": selected_tipo[0],
+                    "Ciclo": selected_ciclo[0],
+                    "Soaking": ",".join(selected_soaking),
+                    "GroupNumber": ",".join([str(g) for g in selected_groups]),
+                    "TestType": test_type,
+                    "IsCorrect": is_correct,
+                    "Reason": reason
+                }])
 
-if len(selected_tipo) == 1 and len(selected_ciclo) == 1:
-    st.subheader("✅ Graph Quality Check")
-    is_correct = st.radio("Is this graph correct?", ("Yes", "No"))
-    reason = ""
+                try:
+                    if os.path.exists(local_csv_path) and os.path.getsize(local_csv_path) > 0:
+                        existing = pd.read_csv(local_csv_path)
+                        updated = pd.concat([existing, entry], ignore_index=True)
+                    else:
+                        updated = entry
 
-    if is_correct == "No":
-        reason = st.text_area("Please describe why the graph is incorrect:")
-        if reason:
-            entry = pd.DataFrame([{
-                "Familia": ",".join(selected_familia),
-                "Tipo_Acero_Limpio": selected_tipo[0],
-                "Ciclo": selected_ciclo[0],
-                "Soaking": ",".join(selected_soaking),
-                "GroupNumber": ",".join([str(g) for g in selected_groups]),
-                "TestType": test_type,
-                "IsCorrect": is_correct,
-                "Reason": reason
-            }])
-
-            try:
-                st.write("🔧 DEBUG: Attempting to save feedback entry...")
-                st.write(f"🔧 DEBUG: Entry DataFrame:\n{entry}")
-                st.write(f"🔧 DEBUG: Target path: {local_csv_path}")
-
-                if os.path.exists(local_csv_path):
-                    st.write("🔧 DEBUG: File exists — reading existing data.")
-                    existing = pd.read_csv(local_csv_path)
-                    st.write(f"🔧 DEBUG: Existing file has {existing.shape[0]} rows and {existing.shape[1]} columns.")
-                    updated = pd.concat([existing, entry], ignore_index=True)
                     updated.to_csv(local_csv_path, index=False)
-                    st.write("🔧 DEBUG: Data appended and saved to CSV.")
-                else:
-                    st.write("🔧 DEBUG: File does not exist — creating new CSV.")
-                    entry.to_csv(local_csv_path, index=False)
-                    st.write("🔧 DEBUG: New CSV created and saved.")
-
-                st.success(f"✅ Feedback saved to: {local_csv_path}")
-                st.write(f"✅ Rows saved now: {updated.shape[0] if 'updated' in locals() else entry.shape[0]}")
-
-            except Exception as e:
-                st.error(f"❌ Error saving to CSV file: {e}")
+                    st.success(f"✅ Feedback saved to: {local_csv_path}")
+                except Exception as e:
+                    st.error(f"❌ Error saving to CSV file: {e}")
+            else:
+                st.warning("⚠ Please provide a reason for marking as incorrect.")
         else:
-            st.warning("⚠ Please provide a reason for marking as incorrect.")
-    else:
-        st.success("✅ Marked as CORRECT!")
-
+            st.success("✅ Marked as CORRECT!")
 
     # Show Full File Paths as clickable links
     st.subheader("📂 Full File Paths for Filtered Data")
