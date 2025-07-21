@@ -3,13 +3,17 @@ import plotly.graph_objects as go
 import streamlit as st
 import unicodedata
 import re
+import os
 
 # Streamlit config
 st.set_page_config(page_title="Dashboard - Curvas de Revenido", layout="wide")
 
+# File paths
+data_file_path = "data_bi_CR2.csv"
+quality_check_path = r"C:\\Users\\60098360\\Desktop\\Python codes\\Graph Quality Check.csv"
+
 # Load data
-file_path = "data_bi_CR2.csv"
-df = pd.read_csv(file_path)
+df = pd.read_csv(data_file_path)
 
 # Define key columns
 column_a = df.columns[0]   # Tipo_Acero_Limpio
@@ -31,44 +35,34 @@ columns_charpy = df.columns[31:42]
 # Process Muestra and Temp
 df['MuestraNum'] = df[column_muestra].astype(str)
 df['Temp'] = pd.to_numeric(df[column_tipo_muestra], errors='coerce').round()
-
-# Extract Group Number from Muestra_Temp_TestType_Index
 df['GroupNumber'] = df[column_index].astype(str).apply(lambda x: int(re.findall(r'[TDC](\d+)', x)[0]) if re.findall(r'[TDC](\d+)', x) else 1)
 
 # Sidebar filters
 st.sidebar.header("Filters")
-
-# Familia filter
 all_familia = sorted(df[column_d].dropna().unique())
 selected_familia = st.sidebar.multiselect("Select Familia", all_familia, default=all_familia)
 df_filtered = df[df[column_d].isin(selected_familia)]
 
-# Tipo_Acero_Limpio filter
 all_tipo = sorted(df_filtered[column_a].dropna().unique())
 selected_tipo = st.sidebar.multiselect("Select Tipo_Acero_Limpio", all_tipo, default=all_tipo)
 df_filtered = df_filtered[df_filtered[column_a].isin(selected_tipo)]
 
-# Ciclo filter
 all_ciclos = sorted(df_filtered[column_c].dropna().unique())
 selected_ciclo = st.sidebar.multiselect("Select Ciclo", all_ciclos, default=all_ciclos)
 df_filtered = df_filtered[df_filtered[column_c].isin(selected_ciclo)]
 
-# Soaking filter
 all_soaking = sorted(df_filtered[column_soaking].dropna().unique())
 selected_soaking = st.sidebar.multiselect("Select Soaking", all_soaking, default=all_soaking)
 df_filtered = df_filtered[df_filtered[column_soaking].isin(selected_soaking)]
 
-# Muestra filter
 all_muestras = sorted(df_filtered['MuestraNum'].dropna().unique())
 selected_muestras = st.sidebar.multiselect("Select Muestra", all_muestras, default=all_muestras)
 df_filtered = df_filtered[df_filtered['MuestraNum'].isin(selected_muestras)]
 
-# GroupNumber filter (RESTORED!)
 unique_groups = sorted(df_filtered['GroupNumber'].unique())
 selected_groups = st.sidebar.multiselect("Select Group Number", unique_groups, default=unique_groups)
 df_filtered = df_filtered[df_filtered['GroupNumber'].isin(selected_groups)]
 
-# Test type selection
 test_type = st.sidebar.selectbox("Select Test Type", ["Traccion", "Dureza", "Charpy"])
 selected_columns = (
     columns_traccion if test_type == "Traccion"
@@ -133,11 +127,11 @@ else:
         else:
             return 'solid'
 
-    long_df['MeasurementClean'] = long_df['Measurement'].str.replace(r'\(merged\)', '', regex=True).str.strip()
+    long_df['MeasurementClean'] = long_df['Measurement'].str.replace(r'\\(merged\\)', '', regex=True).str.strip()
     long_df['ColorHex'] = long_df['Measurement'].apply(assign_color)
     long_df['LineDash'] = long_df['Measurement'].apply(assign_dash)
     long_df['Legend'] = long_df['MeasurementClean'] + ' (Soaking ' + long_df[column_soaking].astype(str) + ')'
-    long_df['IsPercentage'] = long_df['Measurement'].str.contains(r'\(%\)', regex=True)
+    long_df['IsPercentage'] = long_df['Measurement'].str.contains(r'\\(%\\)', regex=True)
 
     show_labels = len(long_df) <= 100
 
@@ -178,11 +172,17 @@ else:
 
     st.plotly_chart(fig, use_container_width=True)
 
-    # Feedback interface
+    # Feedback interface with persistent storage
     if len(selected_tipo) == 1 and len(selected_ciclo) == 1:
+        selected_familia_str = ",".join(selected_familia)
+        selected_tipo_str = selected_tipo[0]
+        selected_ciclo_str = selected_ciclo[0]
+        selected_soaking_str = ",".join(selected_soaking)
+        selected_group_str = ",".join([str(g) for g in selected_groups])
+
         st.subheader("✅ Graph Quality Check")
         is_correct = st.radio("Is this graph correct?", ("Yes", "No"))
-
+        reason = ""
         if is_correct == "No":
             reason = st.text_area("Please describe why the graph is incorrect:")
             if reason:
@@ -192,6 +192,25 @@ else:
         else:
             st.success("✅ Marked as CORRECT!")
 
+        # Prepare entry to save
+        new_entry = pd.DataFrame([{
+            "Familia": selected_familia_str,
+            "Tipo_Acero_Limpio": selected_tipo_str,
+            "Ciclo": selected_ciclo_str,
+            "Soaking": selected_soaking_str,
+            "GroupNumber": selected_group_str,
+            "TestType": test_type,
+            "IsCorrect": is_correct,
+            "Reason": reason
+        }])
+
+        # Save to CSV (append or create)
+        if os.path.exists(quality_check_path):
+            existing_df = pd.read_csv(quality_check_path)
+            existing_df = pd.concat([existing_df, new_entry], ignore_index=True)
+            existing_df.to_csv(quality_check_path, index=False)
+        else:
+            new_entry.to_csv(quality_check_path, index=False)
 
     # Show Full File Paths as clickable links
     st.subheader("📂 Full File Paths for Filtered Data")
