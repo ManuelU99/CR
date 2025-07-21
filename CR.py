@@ -123,11 +123,14 @@ else:
     st.plotly_chart(fig, use_container_width=True)
 
     # --- Upload feedback CSV ---
-    uploaded_feedback = st.file_uploader("Upload existing feedback CSV", type=["csv"])
-    feedback_df = None
-    if uploaded_feedback is not None:
-        feedback_df = pd.read_csv(uploaded_feedback)
-        st.success("✅ Feedback CSV loaded.")
+    feedback_url = "https://raw.githubusercontent.com/yourusername/yourrepo/main/Graph_Quality_Control_Check.csv"
+    try:
+        feedback_df = pd.read_csv(feedback_url)
+        st.success("✅ Feedback CSV loaded from GitHub.")
+    except Exception as e:
+        feedback_df = None
+        st.warning(f"⚠ Could not load feedback CSV from GitHub: {e}")
+
 
     # --- Check existing feedback ---
     existing_feedback = None
