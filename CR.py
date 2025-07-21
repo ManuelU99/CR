@@ -31,7 +31,7 @@ columns_charpy = df.columns[31:42]
 df['MuestraNum'] = df[column_muestra].astype(str)
 df['Temp'] = pd.to_numeric(df[column_tipo_muestra], errors='coerce').round()
 
-# Extract Group Number from Muestra_Temp_TestType_Index (last digit)
+# Extract Group Number from Muestra_Temp_TestType_Index
 df['GroupNumber'] = df[column_index].astype(str).apply(lambda x: int(re.findall(r'[TDC](\d+)', x)[0]) if re.findall(r'[TDC](\d+)', x) else 1)
 
 # Sidebar filters
@@ -128,11 +128,14 @@ else:
     long_df['LineDash'] = long_df['Measurement'].apply(assign_dash)
     long_df['Legend'] = long_df['MeasurementClean'] + ' (Soaking ' + long_df[column_soaking].astype(str) + ')'
 
+    # Check for percentage series
+    long_df['IsPercentage'] = long_df['Measurement'].str.contains(r'\(%\)', regex=True)
+
     show_labels = len(long_df) <= 100
 
     fig = go.Figure()
 
-    for (legend, color, dash), group in long_df.groupby(['Legend', 'ColorHex', 'LineDash']):
+    for (legend, color, dash, is_percentage), group in long_df.groupby(['Legend', 'ColorHex', 'LineDash', 'IsPercentage']):
         legend_norm = normalize(legend)
         show_text = group['Value'] if ('req' not in legend_norm and show_labels) else None
 
@@ -144,6 +147,7 @@ else:
             line=dict(color=color, dash=dash),
             text=show_text,
             textposition='top center',
+            yaxis='y2' if is_percentage else 'y',
             hovertemplate=(
                 f"<b>{legend}</b><br>"
                 f"Muestra: %{{customdata[0]}}<br>"
@@ -156,8 +160,8 @@ else:
     fig.update_layout(
         title=f"Dashboard - Curvas de Revenido: {test_type}",
         xaxis_title='Temp',
-        yaxis_title='Value',
-        xaxis=dict(tickangle=0),
+        yaxis=dict(title='Value'),
+        yaxis2=dict(title='Value (%)', overlaying='y', side='right'),
         legend_title='Series',
         height=700,
         width=1200,
