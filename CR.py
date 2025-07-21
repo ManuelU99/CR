@@ -90,9 +90,9 @@ if (
     if not match.empty:
         reason_text = match.iloc[0]['Reason']
 
+# Only display once
 if reason_text:
     st.warning(f"⚠ Note for this graph: {reason_text}")
-
 
 
 # Display Reason if exists
