@@ -9,7 +9,7 @@ import os
 st.set_page_config(page_title="Dashboard - Curvas de Revenido", layout="wide")
 
 # Define local Excel storage path
-local_excel_path = r"C:\Users\60098360\Desktop\Python codes\Graph Quality Control Check.csv"
+local_csv_path = r"C:\Users\60098360\Desktop\Python codes\Graph Quality Control Check.csv"
 
 # Load data
 data_file_path = "data_bi_CR2.csv"
@@ -119,12 +119,12 @@ else:
                     "Reason": reason
                 }])
                 try:
-                    if os.path.exists(local_excel_path):
-                        existing = pd.read_excel(local_excel_path)
-                        pd.concat([existing, entry], ignore_index=True).to_excel(local_excel_path, index=False)
+                    if os.path.exists(local_csv_path):
+                        existing = pd.read_csv(local_csv_path)
+                        pd.concat([existing, entry], ignore_index=True).to_csv(local_csv_path, index=False)
                     else:
-                        entry.to_excel(local_excel_path, index=False)
-                    st.success(f"✅ Feedback saved to: {local_excel_path}")
+                        entry.to_csv(local_csv_path, index=False)
+                    st.success(f"✅ Feedback saved to: {local_csv_path}")
                 except Exception as e:
                     st.error(f"❌ Error saving to Excel file: {e}")
             else:
