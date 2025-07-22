@@ -166,10 +166,13 @@ else:
 
     for (legend, color, dash, is_percentage), group in long_df.groupby(['Legend', 'ColorHex', 'LineDash', 'IsPercentage']):
         legend_norm = normalize(legend)
-        if show_text := group['Value'] if ('req' not in legend_norm and show_labels) else None:
+        if 'req' not in legend_norm and show_labels:
+            show_text = group['Value']
             mode = 'lines+markers+text' if show_lines else 'markers+text'
         else:
+            show_text = None
             mode = 'lines+markers' if show_lines else 'markers'
+
 
         fig.add_trace(go.Scatter(
             x=group['Temp'],
