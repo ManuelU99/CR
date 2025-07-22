@@ -61,7 +61,19 @@ unique_groups = sorted(df_filtered['GroupNumber'].unique())
 selected_groups = st.sidebar.multiselect("Select Group Number", unique_groups, default=unique_groups)
 df_filtered = df_filtered[df_filtered['GroupNumber'].isin(selected_groups)]
 
-
+# Ensure column is string
+df_filtered[column_temp_ensayo_req] = df_filtered[column_temp_ensayo_req].astype(str)
+# Get unique non-null values
+all_temp_ensayo_req = sorted(
+    df_filtered[column_temp_ensayo_req].dropna().unique()
+)
+# Sidebar multiselect
+selected_temp_ensayo_req = st.sidebar.multiselect(
+    "Select Temp Ensayo Req (merged)", all_temp_ensayo_req, default=all_temp_ensayo_req
+)
+# Apply filter only if selection is non-empty
+if selected_temp_ensayo_req:
+    df_filtered = df_filtered[df_filtered[column_temp_ensayo_req].isin(selected_temp_ensayo_req)]
 
 # Test type selection
 test_type = st.sidebar.selectbox("Select Test Type", ["Traccion", "Dureza", "Charpy"])
