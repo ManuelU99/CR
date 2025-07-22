@@ -83,6 +83,13 @@ selected_columns = (
     else columns_charpy
 )
 
+all_muestra_nums = sorted(df_filtered[column_muestra].dropna().unique())
+selected_muestra_nums = st.sidebar.multiselect(
+    "Select Muestra Number", all_muestra_nums, default=all_muestra_nums
+)
+df_filtered = df_filtered[df_filtered[column_muestra].isin(selected_muestra_nums)]
+
+
 # NEW: Checkbox to control line display
 show_lines = st.sidebar.checkbox("Show lines connecting dots", value=True)
 
