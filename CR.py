@@ -69,7 +69,7 @@ all_temp_ensayo_req = sorted(
 )
 # Sidebar multiselect
 selected_temp_ensayo_req = st.sidebar.multiselect(
-    "Select Temp Ensayo Req (merged)", all_temp_ensayo_req, default=all_temp_ensayo_req
+    "Select Temp Ensayo Req", all_temp_ensayo_req, default=all_temp_ensayo_req
 )
 # Apply filter only if selection is non-empty
 if selected_temp_ensayo_req:
