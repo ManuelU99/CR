@@ -16,7 +16,7 @@ column_a = df.columns[0]   # Tipo_Acero_Limpio
 column_b = df.columns[1]   # Grado_Acero
 column_c = df.columns[2]   # Ciclo
 column_d = df.columns[3]   # Familia
-column_e = df.columns[4]   # Muestra_Probeta_Temp
+column_muestra_probeta_temp = df.columns[4]   # Muestra_Probeta_Temp
 column_muestra = df.columns[5]  # Muestra
 column_testtype = df.columns[6]  # Test type
 column_index = df.columns[7]     # Muestra_Temp_TestType_Index
@@ -83,11 +83,12 @@ selected_columns = (
     else columns_charpy
 )
 
-all_muestra_nums = sorted(df_filtered[column_muestra].dropna().unique())
-selected_muestra_nums = st.sidebar.multiselect(
-    "Select Muestra Number", all_muestra_nums, default=all_muestra_nums
+all_muestra_probeta = sorted(df_filtered[column_muestra_probeta_temp].dropna().unique())
+selected_muestra_probeta = st.sidebar.multiselect(
+    "Select Muestra_Probeta_Temp", all_muestra_probeta, default=all_muestra_probeta
 )
-df_filtered = df_filtered[df_filtered[column_muestra].isin(selected_muestra_nums)]
+df_filtered = df_filtered[df_filtered[column_muestra_probeta_temp].isin(selected_muestra_probeta)]
+
 
 
 # NEW: Checkbox to control line display
@@ -123,7 +124,7 @@ if df_filtered.empty:
 else:
     long_df = df_filtered.melt(
         id_vars=[
-            column_a, column_b, column_c, column_d, column_e, column_muestra,
+            column_a, column_b, column_c, column_d, column_muestra_probeta_temp, column_muestra,
             column_testtype, column_index, column_tipo_muestra, column_soaking,
             'Temp', 'MuestraNum', 'GroupNumber'
         ],
