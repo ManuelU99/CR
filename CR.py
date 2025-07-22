@@ -68,6 +68,9 @@ selected_columns = (
     else columns_charpy
 )
 
+# NEW: Checkbox to control line display
+show_lines = st.sidebar.checkbox("Show lines connecting dots", value=True)
+
 # Load Quality Control CSV
 qc_file_path = r"https://raw.githubusercontent.com/ManuelU99/CR/refs/heads/main/Graph_Quality_Control_Check.csv"
 df_qc = pd.read_csv(qc_file_path)
@@ -163,12 +166,15 @@ else:
 
     for (legend, color, dash, is_percentage), group in long_df.groupby(['Legend', 'ColorHex', 'LineDash', 'IsPercentage']):
         legend_norm = normalize(legend)
-        show_text = group['Value'] if ('req' not in legend_norm and show_labels) else None
+        if show_text := group['Value'] if ('req' not in legend_norm and show_labels) else None:
+            mode = 'lines+markers+text' if show_lines else 'markers+text'
+        else:
+            mode = 'lines+markers' if show_lines else 'markers'
 
         fig.add_trace(go.Scatter(
             x=group['Temp'],
             y=group['Value'],
-            mode='lines+markers+text' if show_text is not None else 'lines+markers',
+            mode=mode,
             name=legend,
             line=dict(color=color, dash=dash),
             text=show_text,
