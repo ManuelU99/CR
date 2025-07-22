@@ -95,6 +95,7 @@ if (
 if reason_text:
     st.warning(f"⚠ Note for this graph: {reason_text}")
 
+
 if df_filtered.empty:
     st.warning("⚠ No data available for the selected filters.")
 else:
@@ -137,7 +138,7 @@ else:
         if "area" in m_norm and "ind" in m_norm:
             return '#009900'
         if "area" in m_norm and "prom" in m_norm:
-            return '#009900'
+            return "#76E778"
         return '#999999'
 
     def assign_dash(m):
@@ -173,6 +174,7 @@ else:
             show_text = None
             mode = 'lines+markers' if show_lines else 'markers'
 
+
         fig.add_trace(go.Scatter(
             x=group['Temp'],
             y=group['Value'],
@@ -205,7 +207,6 @@ else:
     st.plotly_chart(fig, use_container_width=True)
 
     if st.checkbox("Show filtered data table"):
-        # Filter only table rows by Test Type
-        df_table = df_filtered[df_filtered[column_testtype] == test_type]
-        df_display = df_table.dropna(axis=1, how='all')
+        # Drop columns where all values are None/NaN before displaying
+        df_display = df_filtered.dropna(axis=1, how='all')
         st.write(df_display)
