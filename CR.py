@@ -23,6 +23,7 @@ column_index = df.columns[7]     # Muestra_Temp_TestType_Index
 column_tipo_muestra = df.columns[8]  # Tipo de muestra (Sin °C)
 column_soaking = df.columns[9]   # Soaking
 column_temp_ensayo_req = "Temp Ensayo Req (merged)"
+column_tipo_de_muestra = "Tipo de muestra"
 
 columns_traccion = df.columns[10:23]
 columns_dureza = df.columns[23:31]
@@ -56,24 +57,26 @@ all_soaking = sorted(df_filtered[column_soaking].dropna().unique())
 selected_soaking = st.sidebar.multiselect("Select Soaking", all_soaking, default=all_soaking)
 df_filtered = df_filtered[df_filtered[column_soaking].isin(selected_soaking)]
 
-# Detect max group
+# Group Number filter
 unique_groups = sorted(df_filtered['GroupNumber'].unique())
 selected_groups = st.sidebar.multiselect("Select Group Number", unique_groups, default=unique_groups)
 df_filtered = df_filtered[df_filtered['GroupNumber'].isin(selected_groups)]
 
-# Ensure column is string
+# Temp Ensayo Req filter (with type check)
 df_filtered[column_temp_ensayo_req] = df_filtered[column_temp_ensayo_req].astype(str)
-# Get unique non-null values
-all_temp_ensayo_req = sorted(
-    df_filtered[column_temp_ensayo_req].dropna().unique()
-)
-# Sidebar multiselect
+all_temp_ensayo_req = sorted(df_filtered[column_temp_ensayo_req].dropna().unique())
 selected_temp_ensayo_req = st.sidebar.multiselect(
     "Select Temp Ensayo Req", all_temp_ensayo_req, default=all_temp_ensayo_req
 )
-# Apply filter only if selection is non-empty
 if selected_temp_ensayo_req:
     df_filtered = df_filtered[df_filtered[column_temp_ensayo_req].isin(selected_temp_ensayo_req)]
+
+# NEW: Tipo de muestra filter
+all_tipo_de_muestra = sorted(df_filtered[column_tipo_de_muestra].dropna().unique())
+selected_tipo_de_muestra = st.sidebar.multiselect(
+    "Select Tipo de muestra", all_tipo_de_muestra, default=all_tipo_de_muestra
+)
+df_filtered = df_filtered[df_filtered[column_tipo_de_muestra].isin(selected_tipo_de_muestra)]
 
 # Test type selection
 test_type = st.sidebar.selectbox("Select Test Type", ["Traccion", "Dureza", "Charpy"])
@@ -83,15 +86,14 @@ selected_columns = (
     else columns_charpy
 )
 
+# Muestra_Probeta_Temp filter
 all_muestra_probeta = sorted(df_filtered[column_muestra_probeta_temp].dropna().unique())
 selected_muestra_probeta = st.sidebar.multiselect(
     "Select Muestra_Probeta_Temp", all_muestra_probeta, default=all_muestra_probeta
 )
 df_filtered = df_filtered[df_filtered[column_muestra_probeta_temp].isin(selected_muestra_probeta)]
 
-
-
-# NEW: Checkbox to control line display
+# Checkbox to control line display
 show_lines = st.sidebar.checkbox("Show lines connecting dots", value=True)
 
 # Load Quality Control CSV
@@ -118,7 +120,6 @@ if (
 if reason_text:
     st.warning(f"⚠ Note for this graph: {reason_text}")
 
-
 if df_filtered.empty:
     st.warning("⚠ No data available for the selected filters.")
 else:
@@ -126,7 +127,7 @@ else:
         id_vars=[
             column_a, column_b, column_c, column_d, column_muestra_probeta_temp, column_muestra,
             column_testtype, column_index, column_tipo_muestra, column_soaking,
-            'Temp', 'MuestraNum', 'GroupNumber'
+            'Temp', 'MuestraNum', 'GroupNumber', column_temp_ensayo_req, column_tipo_de_muestra
         ],
         value_vars=selected_columns,
         var_name='Measurement',
@@ -197,7 +198,6 @@ else:
             show_text = None
             mode = 'lines+markers' if show_lines else 'markers'
 
-
         fig.add_trace(go.Scatter(
             x=group['Temp'],
             y=group['Value'],
@@ -230,6 +230,5 @@ else:
     st.plotly_chart(fig, use_container_width=True)
 
     if st.checkbox("Show filtered data table"):
-        # Drop columns where all values are None/NaN before displaying
         df_display = df_filtered.dropna(axis=1, how='all')
         st.write(df_display)
