@@ -23,7 +23,7 @@ column_index = df.columns[7]     # Muestra_Temp_TestType_Index
 column_tipo_muestra = df.columns[8]  # Tipo de muestra (Sin °C)
 column_soaking = df.columns[9]   # Soaking
 column_temp_ensayo_req = "Temp Ensayo Req (merged)"
-column_tipo_de_muestra = "Tipo de muestra"
+column_tipo_de_probeta = "Tipo de probeta"
 
 columns_traccion = df.columns[10:23]
 columns_dureza = df.columns[23:31]
@@ -71,12 +71,12 @@ selected_temp_ensayo_req = st.sidebar.multiselect(
 if selected_temp_ensayo_req:
     df_filtered = df_filtered[df_filtered[column_temp_ensayo_req].isin(selected_temp_ensayo_req)]
 
-# NEW: Tipo de muestra filter
-all_tipo_de_muestra = sorted(df_filtered[column_tipo_de_muestra].dropna().unique())
+# NEW: Tipo de probeta filter
+all_tipo_de_muestra = sorted(df_filtered[column_tipo_de_probeta].dropna().unique())
 selected_tipo_de_muestra = st.sidebar.multiselect(
-    "Select Tipo de muestra", all_tipo_de_muestra, default=all_tipo_de_muestra
+    "Select Tipo de probeta", all_tipo_de_muestra, default=all_tipo_de_muestra
 )
-df_filtered = df_filtered[df_filtered[column_tipo_de_muestra].isin(selected_tipo_de_muestra)]
+df_filtered = df_filtered[df_filtered[column_tipo_de_probeta].isin(selected_tipo_de_muestra)]
 
 # Test type selection
 test_type = st.sidebar.selectbox("Select Test Type", ["Traccion", "Dureza", "Charpy"])
@@ -127,7 +127,7 @@ else:
         id_vars=[
             column_a, column_b, column_c, column_d, column_muestra_probeta_temp, column_muestra,
             column_testtype, column_index, column_tipo_muestra, column_soaking,
-            'Temp', 'MuestraNum', 'GroupNumber', column_temp_ensayo_req, column_tipo_de_muestra
+            'Temp', 'MuestraNum', 'GroupNumber', column_temp_ensayo_req, column_tipo_de_probeta
         ],
         value_vars=selected_columns,
         var_name='Measurement',
