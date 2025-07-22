@@ -95,7 +95,7 @@ if (
 if reason_text:
     st.warning(f"⚠ Note for this graph: {reason_text}")
 
-df_filtered = df_filtered[df_filtered[column_testtype] == test_type]
+
 if df_filtered.empty:
     st.warning("⚠ No data available for the selected filters.")
 else:
