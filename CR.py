@@ -137,7 +137,7 @@ else:
         if "area" in m_norm and "ind" in m_norm:
             return '#009900'
         if "area" in m_norm and "prom" in m_norm:
-            return '#009900'
+            return "#76E778"
         return '#999999'
 
     def assign_dash(m):
