@@ -53,6 +53,13 @@ all_ciclos = sorted(df_filtered[column_c].dropna().unique())
 selected_ciclo = st.sidebar.multiselect("Select Ciclo", all_ciclos, default=all_ciclos)
 df_filtered = df_filtered[df_filtered[column_c].isin(selected_ciclo)]
 
+# Tipo de probeta filter
+all_tipo_de_muestra = sorted(df_filtered[column_tipo_de_probeta].dropna().unique())
+selected_tipo_de_muestra = st.sidebar.multiselect(
+    "Select Tipo de probeta", all_tipo_de_muestra, default=all_tipo_de_muestra
+)
+df_filtered = df_filtered[df_filtered[column_tipo_de_probeta].isin(selected_tipo_de_muestra)]
+
 all_soaking = sorted(df_filtered[column_soaking].dropna().unique())
 selected_soaking = st.sidebar.multiselect("Select Soaking", all_soaking, default=all_soaking)
 df_filtered = df_filtered[df_filtered[column_soaking].isin(selected_soaking)]
@@ -70,13 +77,6 @@ selected_temp_ensayo_req = st.sidebar.multiselect(
 )
 if selected_temp_ensayo_req:
     df_filtered = df_filtered[df_filtered[column_temp_ensayo_req].isin(selected_temp_ensayo_req)]
-
-# NEW: Tipo de probeta filter
-all_tipo_de_muestra = sorted(df_filtered[column_tipo_de_probeta].dropna().unique())
-selected_tipo_de_muestra = st.sidebar.multiselect(
-    "Select Tipo de probeta", all_tipo_de_muestra, default=all_tipo_de_muestra
-)
-df_filtered = df_filtered[df_filtered[column_tipo_de_probeta].isin(selected_tipo_de_muestra)]
 
 # Test type selection
 test_type = st.sidebar.selectbox("Select Test Type", ["Traccion", "Dureza", "Charpy"])
