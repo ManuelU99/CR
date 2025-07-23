@@ -24,6 +24,8 @@ column_tipo_muestra = df.columns[8]  # Tipo de muestra (Sin °C)
 column_soaking = df.columns[9]   # Soaking
 column_temp_ensayo_req = "Temp Ensayo Req (merged)"
 column_tipo_de_probeta = "Tipo de probeta"
+column_op = "OP"
+column_colada = "Colada.1"
 
 columns_traccion = df.columns[10:23]
 columns_dureza = df.columns[23:31]
@@ -52,6 +54,12 @@ df_filtered = df_filtered[df_filtered[column_a].isin(selected_tipo)]
 all_ciclos = sorted(df_filtered[column_c].dropna().unique())
 selected_ciclo = st.sidebar.multiselect("Select Ciclo", all_ciclos, default=all_ciclos)
 df_filtered = df_filtered[df_filtered[column_c].isin(selected_ciclo)]
+
+all_colada = sorted(df_filtered[column_colada].dropna().unique())
+selected_colada = st.sidebar.multiselect("Select Colada", all_colada, default=all_colada)
+df_filtered = df_filtered[df_filtered[column_colada].isin(selected_colada)]
+
+
 
 # Tipo de probeta filter
 all_tipo_de_muestra = sorted(df_filtered[column_tipo_de_probeta].dropna().unique())
