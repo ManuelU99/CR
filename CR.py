@@ -31,18 +31,11 @@ columns_traccion = df.columns[10:23]
 columns_dureza = df.columns[23:31]
 columns_charpy = df.columns[31:42]
 
-# 🔧 Format OP and Colada without decimals
-df[column_op] = df[column_op].apply(lambda x: str(int(x)) if pd.notna(x) else x)
-df[column_colada] = df[column_colada].apply(lambda x: str(int(x)) if pd.notna(x) else x)
-
-# 🔧 Add 'Missing' option for OP filter
-df['OP_display'] = df[column_op].fillna("Missing")
-
 # Process Muestra and Temp
 df['MuestraNum'] = df[column_muestra].astype(str)
 df['Temp'] = pd.to_numeric(df[column_tipo_muestra], errors='coerce').round()
 
-# Extract Group Number
+# Extract Group Number from Muestra_Temp_TestType_Index
 df['GroupNumber'] = df[column_index].astype(str).apply(
     lambda x: int(re.findall(r'[TDC](\d+)', x)[0]) if re.findall(r'[TDC](\d+)', x) else 1
 )
@@ -66,49 +59,65 @@ all_colada = sorted(df_filtered[column_colada].dropna().unique())
 selected_colada = st.sidebar.multiselect("Select Colada", all_colada, default=all_colada)
 df_filtered = df_filtered[df_filtered[column_colada].isin(selected_colada)]
 
-# 🔧 Use OP_display for filter
-all_op = sorted(df_filtered['OP_display'].dropna().unique())
+all_op = sorted(df_filtered[column_op].dropna().unique())
 selected_op = st.sidebar.multiselect("Select OP", all_op, default=all_op)
-df_filtered = df_filtered[df_filtered['OP_display'].isin(selected_op)]
+df_filtered = df_filtered[df_filtered[column_op].isin(selected_op)]
 
+
+# Tipo de probeta filter
 all_tipo_de_muestra = sorted(df_filtered[column_tipo_de_probeta].dropna().unique())
-selected_tipo_de_muestra = st.sidebar.multiselect("Select Tipo de probeta", all_tipo_de_muestra, default=all_tipo_de_muestra)
+selected_tipo_de_muestra = st.sidebar.multiselect(
+    "Select Tipo de probeta", all_tipo_de_muestra, default=all_tipo_de_muestra
+)
 df_filtered = df_filtered[df_filtered[column_tipo_de_probeta].isin(selected_tipo_de_muestra)]
 
 all_soaking = sorted(df_filtered[column_soaking].dropna().unique())
 selected_soaking = st.sidebar.multiselect("Select Soaking", all_soaking, default=all_soaking)
 df_filtered = df_filtered[df_filtered[column_soaking].isin(selected_soaking)]
 
+# Group Number filter
 unique_groups = sorted(df_filtered['GroupNumber'].unique())
 selected_groups = st.sidebar.multiselect("Select Group Number", unique_groups, default=unique_groups)
 df_filtered = df_filtered[df_filtered['GroupNumber'].isin(selected_groups)]
 
-# Temp Ensayo Req filter
+# Temp Ensayo Req filter (with type check)
 df_filtered[column_temp_ensayo_req] = df_filtered[column_temp_ensayo_req].astype(str)
 all_temp_ensayo_req = sorted(df_filtered[column_temp_ensayo_req].dropna().unique())
-selected_temp_ensayo_req = st.sidebar.multiselect("Select Temp Ensayo Req", all_temp_ensayo_req, default=all_temp_ensayo_req)
+selected_temp_ensayo_req = st.sidebar.multiselect(
+    "Select Temp Ensayo Req", all_temp_ensayo_req, default=all_temp_ensayo_req
+)
 if selected_temp_ensayo_req:
     df_filtered = df_filtered[df_filtered[column_temp_ensayo_req].isin(selected_temp_ensayo_req)]
 
 # Test type selection
-test_type = st.sidebar.selectbox("Select Test Type", ["Tracción", "Dureza", "Charpy"])
-selected_columns = columns_traccion if test_type == "Tracción" else columns_dureza if test_type == "Dureza" else columns_charpy
+test_type = st.sidebar.selectbox("Select Test Type", ["Traccion", "Dureza", "Charpy"])
+selected_columns = (
+    columns_traccion if test_type == "Traccion"
+    else columns_dureza if test_type == "Dureza"
+    else columns_charpy
+)
 
 # Muestra_Probeta_Temp filter
 all_muestra_probeta = sorted(df_filtered[column_muestra_probeta_temp].dropna().unique())
-selected_muestra_probeta = st.sidebar.multiselect("Select Muestra_Probeta_Temp", all_muestra_probeta, default=all_muestra_probeta)
+selected_muestra_probeta = st.sidebar.multiselect(
+    "Select Muestra_Probeta_Temp", all_muestra_probeta, default=all_muestra_probeta
+)
 df_filtered = df_filtered[df_filtered[column_muestra_probeta_temp].isin(selected_muestra_probeta)]
 
-
-
-# Line toggle
+# Checkbox to control line display
 show_lines = st.sidebar.checkbox("Show lines connecting dots", value=True)
 
-# Quality control message
-df_qc = pd.read_csv("https://raw.githubusercontent.com/ManuelU99/CR/refs/heads/main/Graph_Quality_Control_Check.csv")
+# Load Quality Control CSV
+qc_file_path = r"https://raw.githubusercontent.com/ManuelU99/CR/refs/heads/main/Graph_Quality_Control_Check.csv"
+df_qc = pd.read_csv(qc_file_path)
 
+# Find matching reason (check only if one selection per filter)
 reason_text = ""
-if len(selected_tipo) == 1 and len(selected_ciclo) == 1 and len(selected_soaking) == 1:
+if (
+    len(selected_tipo) == 1 and
+    len(selected_ciclo) == 1 and
+    len(selected_soaking) == 1
+):
     match = df_qc[
         (df_qc['Tipo_Acero_Limpio'].astype(str) == str(selected_tipo[0])) &
         (df_qc['Ciclo'].astype(str) == str(selected_ciclo[0])) &
@@ -118,51 +127,73 @@ if len(selected_tipo) == 1 and len(selected_ciclo) == 1 and len(selected_soaking
     if not match.empty:
         reason_text = match.iloc[0]['Reason']
 
+# Only display warning once
 if reason_text:
     st.warning(f"⚠ Note for this graph: {reason_text}")
 
-# Main graph
 if df_filtered.empty:
     st.warning("⚠ No data available for the selected filters.")
 else:
     long_df = df_filtered.melt(
-        id_vars=[column_a, column_b, column_c, column_d, column_muestra_probeta_temp,
-                 column_muestra, column_testtype, column_index, column_tipo_muestra,
-                 column_soaking, 'Temp', 'MuestraNum', 'GroupNumber',
-                 column_temp_ensayo_req, column_tipo_de_probeta],
+        id_vars=[
+            column_a, column_b, column_c, column_d, column_muestra_probeta_temp, column_muestra,
+            column_testtype, column_index, column_tipo_muestra, column_soaking,
+            'Temp', 'MuestraNum', 'GroupNumber', column_temp_ensayo_req, column_tipo_de_probeta
+        ],
         value_vars=selected_columns,
         var_name='Measurement',
         value_name='Value'
     ).dropna(subset=['Value', 'Temp'])
 
     def normalize(text):
-        return unicodedata.normalize('NFKD', text.lower()).encode('ASCII', 'ignore').decode('utf-8')
+        text = text.lower()
+        text = unicodedata.normalize('NFKD', text).encode('ASCII', 'ignore').decode('utf-8')
+        return text
 
     def assign_color(m):
         m_norm = normalize(m)
-        if "fluencia" in m_norm: return '#CC0066'
-        if "rotura" in m_norm: return '#00009A'
-        if "alarg" in m_norm: return '#009900'
-        if "dureza" in m_norm and "ind" in m_norm and "max" in m_norm: return '#CC0066'
-        if "dureza" in m_norm and "ind" in m_norm and "min" in m_norm: return '#EC36E0'
-        if "dureza" in m_norm and "prom" in m_norm and "max" in m_norm: return '#00009A'
-        if "dureza" in m_norm and "prom" in m_norm and "min" in m_norm: return '#1F7CC7'
-        if "energ" in m_norm and "ind" in m_norm: return '#CC0066'
-        if "energ" in m_norm and "prom" in m_norm: return '#00009A'
-        if "area" in m_norm and "ind" in m_norm: return '#009900'
-        if "area" in m_norm and "prom" in m_norm: return "#76E778"
+        if "fluencia" in m_norm:
+            return '#CC0066'
+        if "rotura" in m_norm:
+            return '#00009A'
+        if "alarg" in m_norm:
+            return '#009900'
+        if "dureza" in m_norm and "ind" in m_norm and "max" in m_norm:
+            return '#CC0066'
+        if "dureza" in m_norm and "ind" in m_norm and "min" in m_norm:
+            return '#EC36E0'
+        if "dureza" in m_norm and "prom" in m_norm and "max" in m_norm:
+            return '#00009A'
+        if "dureza" in m_norm and "prom" in m_norm and "min" in m_norm:
+            return '#1F7CC7'
+        if "energ" in m_norm and "ind" in m_norm:
+            return '#CC0066'
+        if "energ" in m_norm and "prom" in m_norm:
+            return '#00009A'
+        if "area" in m_norm and "ind" in m_norm:
+            return '#009900'
+        if "area" in m_norm and "prom" in m_norm:
+            return "#76E778"
         return '#999999'
 
     def assign_dash(m):
         m_norm = normalize(m)
-        if "req" in m_norm and "max" in m_norm: return 'dash'
-        if "req" in m_norm and "min" in m_norm: return 'dot'
-        return 'solid'
+        has_req = "req" in m_norm
+        has_max = "max" in m_norm or "máx" in m_norm
+        has_min = "min" in m_norm or "mín" in m_norm
+        if has_req and has_max:
+            return 'dash'
+        elif has_req and has_min:
+            return 'dot'
+        else:
+            return 'solid'
 
     long_df['MeasurementClean'] = long_df['Measurement'].str.replace(r'\(merged\)', '', regex=True).str.strip()
     long_df['ColorHex'] = long_df['Measurement'].apply(assign_color)
     long_df['LineDash'] = long_df['Measurement'].apply(assign_dash)
     long_df['Legend'] = long_df['MeasurementClean'] + ' (Soaking ' + long_df[column_soaking].astype(str) + ')'
+
+    # Check for percentage series
     long_df['IsPercentage'] = long_df['Measurement'].str.contains(r'\(%\)', regex=True)
 
     show_labels = len(long_df) <= 100
@@ -171,10 +202,12 @@ else:
 
     for (legend, color, dash, is_percentage), group in long_df.groupby(['Legend', 'ColorHex', 'LineDash', 'IsPercentage']):
         legend_norm = normalize(legend)
-        show_text = group['Value'] if 'req' not in legend_norm and show_labels else None
-        mode = 'lines+markers+text' if show_text is not None and show_lines else \
-               'markers+text' if show_text is not None else \
-               'lines+markers' if show_lines else 'markers'
+        if 'req' not in legend_norm and show_labels:
+            show_text = group['Value']
+            mode = 'lines+markers+text' if show_lines else 'markers+text'
+        else:
+            show_text = None
+            mode = 'lines+markers' if show_lines else 'markers'
 
         fig.add_trace(go.Scatter(
             x=group['Temp'],
@@ -185,7 +218,12 @@ else:
             text=show_text,
             textposition='top center',
             yaxis='y2' if is_percentage else 'y',
-            hovertemplate=f"<b>{legend}</b><br>Muestra: %{{customdata[0]}}<br>Temp: %{{x}}<br>Value: %{{y}}<extra></extra>",
+            hovertemplate=(
+                f"<b>{legend}</b><br>"
+                f"Muestra: %{{customdata[0]}}<br>"
+                f"Temp: %{{x}}<br>"
+                f"Value: %{{y}}<extra></extra>"
+            ),
             customdata=group[['MuestraNum']].values
         ))
 
@@ -203,25 +241,5 @@ else:
     st.plotly_chart(fig, use_container_width=True)
 
     if st.checkbox("Show filtered data table"):
-        # Robust row filter: match test type ignoring case and whitespace
-        df_table = df_filtered[df_filtered[column_testtype].astype(str).str.strip().str.lower() == test_type.lower()]
-
-        # Define columns to show
-        metadata_columns = [
-            column_a, column_b, column_c, column_d, column_muestra_probeta_temp,
-            column_muestra, column_testtype, column_index, column_tipo_muestra,
-            column_soaking, column_temp_ensayo_req, column_tipo_de_probeta,
-            column_op, column_colada
-        ]
-        measurement_columns = (
-            columns_traccion if test_type == "Tracción"
-            else columns_dureza if test_type == "Dureza"
-            else columns_charpy
-        )
-        display_columns = metadata_columns + list(measurement_columns)
-
-        df_display = df_table[display_columns].dropna(axis=1, how='all')
+        df_display = df_filtered.dropna(axis=1, how='all')
         st.write(df_display)
-
-
-
