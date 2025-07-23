@@ -91,8 +91,8 @@ if selected_temp_ensayo_req:
     df_filtered = df_filtered[df_filtered[column_temp_ensayo_req].isin(selected_temp_ensayo_req)]
 
 # Test type selection
-test_type = st.sidebar.selectbox("Select Test Type", ["Traccion", "Dureza", "Charpy"])
-selected_columns = columns_traccion if test_type == "Traccion" else columns_dureza if test_type == "Dureza" else columns_charpy
+test_type = st.sidebar.selectbox("Select Test Type", ["Tracción", "Dureza", "Charpy"])
+selected_columns = columns_traccion if test_type == "Tracción" else columns_dureza if test_type == "Dureza" else columns_charpy
 
 # Muestra_Probeta_Temp filter
 all_muestra_probeta = sorted(df_filtered[column_muestra_probeta_temp].dropna().unique())
@@ -215,7 +215,7 @@ else:
             column_op, column_colada
         ]
         measurement_columns = (
-            columns_traccion if test_type == "Traccion"
+            columns_traccion if test_type == "Tracción"
             else columns_dureza if test_type == "Dureza"
             else columns_charpy
         )
