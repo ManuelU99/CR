@@ -201,4 +201,17 @@ else:
     st.plotly_chart(fig, use_container_width=True)
 
     if st.checkbox("Show filtered data table"):
-        st.write(df_filtered.dropna(axis=1, how='all'))
+        common_columns = [
+            column_a, column_b, column_c, column_d, column_muestra_probeta_temp, column_muestra,
+            column_testtype, column_index, column_tipo_muestra, column_soaking,
+            column_temp_ensayo_req, column_tipo_de_probeta, column_op, column_colada
+        ]
+        # Use selected test type to get relevant measurement columns
+        selected_columns_for_table = (
+            columns_traccion if test_type == "Traccion"
+            else columns_dureza if test_type == "Dureza"
+            else columns_charpy
+        )
+        df_display = df_filtered[common_columns + list(selected_columns_for_table)].dropna(axis=1, how='all')
+        st.write(df_display)
+
