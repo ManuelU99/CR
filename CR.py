@@ -201,9 +201,17 @@ else:
     st.plotly_chart(fig, use_container_width=True)
 
     if st.checkbox("Show filtered data table"):
+        # 🔁 Map display name to actual value in dataset
+        test_type_map = {
+            "Traccion": "Tracción",
+            "Dureza": "Dureza",
+            "Charpy": "Charpy"
+        }
+        test_type_actual = test_type_map[test_type]
+
         # Determine which measurement columns to display based on selected Test Type
         display_columns = df_filtered.columns.intersection(selected_columns).tolist()
-        
+
         # Always show meta-information columns
         meta_columns = [column_a, column_b, column_c, column_d, column_muestra_probeta_temp,
                         column_muestra, column_testtype, column_index, column_tipo_muestra,
@@ -213,8 +221,9 @@ else:
         # Combine meta and relevant measurement columns
         columns_to_show = meta_columns + display_columns
 
-        # 🔧 Filter rows for the selected Test Type
-        df_testtype_filtered = df_filtered[df_filtered[column_testtype] == test_type]
+        # 🔧 Filter rows for the selected Test Type (e.g. "Tracción")
+        df_testtype_filtered = df_filtered[df_filtered[column_testtype] == test_type_actual]
 
         # Display table
         st.write(df_testtype_filtered[columns_to_show].dropna(axis=1, how='all'))
+
