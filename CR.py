@@ -201,10 +201,13 @@ else:
     st.plotly_chart(fig, use_container_width=True)
 
     if st.checkbox("Show filtered data table"):
-        # Filter rows matching the selected test type (safe trim)
-        df_table = df_filtered[df_filtered[column_testtype].astype(str).str.strip() == test_type]
+        # DEBUG: Print test types in current filtered dataset
+        st.write("Unique Test Types in df_filtered:", df_filtered[column_testtype].unique())
 
-        # Display only metadata + relevant test type columns
+        # Robust row filter: match test type ignoring case and whitespace
+        df_table = df_filtered[df_filtered[column_testtype].astype(str).str.strip().str.lower() == test_type.lower()]
+
+        # Define columns to show
         metadata_columns = [
             column_a, column_b, column_c, column_d, column_muestra_probeta_temp,
             column_muestra, column_testtype, column_index, column_tipo_muestra,
@@ -220,5 +223,6 @@ else:
 
         df_display = df_table[display_columns].dropna(axis=1, how='all')
         st.write(df_display)
+
 
 
