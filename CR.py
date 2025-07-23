@@ -201,9 +201,6 @@ else:
     st.plotly_chart(fig, use_container_width=True)
 
     if st.checkbox("Show filtered data table"):
-        # DEBUG: Print test types in current filtered dataset
-        st.write("Unique Test Types in df_filtered:", df_filtered[column_testtype].unique())
-
         # Robust row filter: match test type ignoring case and whitespace
         df_table = df_filtered[df_filtered[column_testtype].astype(str).str.strip().str.lower() == test_type.lower()]
 
