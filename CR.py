@@ -241,7 +241,5 @@ else:
     st.plotly_chart(fig, use_container_width=True)
 
     if st.checkbox("Show filtered data table"):
-            df_display = df_filtered.dropna(axis=1, how='all')
-            st.write(df_display)
-
-
+        df_display = df_filtered.dropna(axis=1, how='all')
+        st.write(df_display)
