@@ -241,25 +241,17 @@ else:
     st.plotly_chart(fig, use_container_width=True)
 
     if st.checkbox("Show filtered data table"):
-        # DEBUG: Print test types in current filtered dataset
-        st.write("Unique Test Types in df_filtered:", df_filtered[column_testtype].unique())
-
-        # Robust row filter: match test type ignoring case and whitespace
-        df_table = df_filtered[df_filtered[column_testtype].astype(str).str.strip().str.lower() == test_type.lower()]
-
-        # Define columns to show
-        metadata_columns = [
-            column_a, column_b, column_c, column_d, column_muestra_probeta_temp,
-            column_muestra, column_testtype, column_index, column_tipo_muestra,
-            column_soaking, column_temp_ensayo_req, column_tipo_de_probeta,
-            column_op, column_colada
+        common_columns = [
+            column_a, column_b, column_c, column_d, column_muestra_probeta_temp, column_muestra,
+            column_testtype, column_index, column_tipo_muestra, column_soaking,
+            column_temp_ensayo_req, column_tipo_de_probeta, column_op, column_colada
         ]
-        measurement_columns = (
+        # Use selected test type to get relevant measurement columns
+        selected_columns_for_table = (
             columns_traccion if test_type == "Traccion"
             else columns_dureza if test_type == "Dureza"
             else columns_charpy
         )
-        display_columns = metadata_columns + list(measurement_columns)
-
-        df_display = df_table[display_columns].dropna(axis=1, how='all')
+        df_display = df_filtered[common_columns + list(selected_columns_for_table)].dropna(axis=1, how='all')
         st.write(df_display)
+
