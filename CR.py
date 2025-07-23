@@ -212,4 +212,9 @@ else:
 
         # Combine meta and relevant measurement columns
         columns_to_show = meta_columns + display_columns
-        st.write(df_filtered[columns_to_show].dropna(axis=1, how='all'))
+
+        # 🔧 Filter rows for the selected Test Type
+        df_testtype_filtered = df_filtered[df_filtered[column_testtype] == test_type]
+
+        # Display table
+        st.write(df_testtype_filtered[columns_to_show].dropna(axis=1, how='all'))
