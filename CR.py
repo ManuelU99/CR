@@ -31,16 +31,18 @@ columns_traccion = df.columns[10:23]
 columns_dureza = df.columns[23:31]
 columns_charpy = df.columns[31:42]
 
-# Format OP and Colada without decimals
+# 🔧 Format OP and Colada without decimals
 df[column_op] = df[column_op].apply(lambda x: str(int(x)) if pd.notna(x) else x)
 df[column_colada] = df[column_colada].apply(lambda x: str(int(x)) if pd.notna(x) else x)
+
+# 🔧 Add 'Missing' option for OP filter
 df['OP_display'] = df[column_op].fillna("Missing")
 
 # Process Muestra and Temp
 df['MuestraNum'] = df[column_muestra].astype(str)
 df['Temp'] = pd.to_numeric(df[column_tipo_muestra], errors='coerce').round()
 
-# Extract Group Number from Muestra_Temp_TestType_Index
+# Extract Group Number
 df['GroupNumber'] = df[column_index].astype(str).apply(
     lambda x: int(re.findall(r'[TDC](\d+)', x)[0]) if re.findall(r'[TDC](\d+)', x) else 1
 )
@@ -64,6 +66,7 @@ all_colada = sorted(df_filtered[column_colada].dropna().unique())
 selected_colada = st.sidebar.multiselect("Select Colada", all_colada, default=all_colada)
 df_filtered = df_filtered[df_filtered[column_colada].isin(selected_colada)]
 
+# 🔧 Use OP_display for filter
 all_op = sorted(df_filtered['OP_display'].dropna().unique())
 selected_op = st.sidebar.multiselect("Select OP", all_op, default=all_op)
 df_filtered = df_filtered[df_filtered['OP_display'].isin(selected_op)]
@@ -80,6 +83,7 @@ unique_groups = sorted(df_filtered['GroupNumber'].unique())
 selected_groups = st.sidebar.multiselect("Select Group Number", unique_groups, default=unique_groups)
 df_filtered = df_filtered[df_filtered['GroupNumber'].isin(selected_groups)]
 
+# Temp Ensayo Req filter
 df_filtered[column_temp_ensayo_req] = df_filtered[column_temp_ensayo_req].astype(str)
 all_temp_ensayo_req = sorted(df_filtered[column_temp_ensayo_req].dropna().unique())
 selected_temp_ensayo_req = st.sidebar.multiselect("Select Temp Ensayo Req", all_temp_ensayo_req, default=all_temp_ensayo_req)
@@ -95,9 +99,13 @@ all_muestra_probeta = sorted(df_filtered[column_muestra_probeta_temp].dropna().u
 selected_muestra_probeta = st.sidebar.multiselect("Select Muestra_Probeta_Temp", all_muestra_probeta, default=all_muestra_probeta)
 df_filtered = df_filtered[df_filtered[column_muestra_probeta_temp].isin(selected_muestra_probeta)]
 
-# Load Quality Control CSV and display alert if applicable
-qc_file_path = r"https://raw.githubusercontent.com/ManuelU99/CR/refs/heads/main/Graph_Quality_Control_Check.csv"
-df_qc = pd.read_csv(qc_file_path)
+
+
+# Line toggle
+show_lines = st.sidebar.checkbox("Show lines connecting dots", value=True)
+
+# Quality control message
+df_qc = pd.read_csv("https://raw.githubusercontent.com/ManuelU99/CR/refs/heads/main/Graph_Quality_Control_Check.csv")
 
 reason_text = ""
 if len(selected_tipo) == 1 and len(selected_ciclo) == 1 and len(selected_soaking) == 1:
@@ -113,7 +121,7 @@ if len(selected_tipo) == 1 and len(selected_ciclo) == 1 and len(selected_soaking
 if reason_text:
     st.warning(f"⚠ Note for this graph: {reason_text}")
 
-# Show plot if data available
+# Main graph
 if df_filtered.empty:
     st.warning("⚠ No data available for the selected filters.")
 else:
@@ -158,7 +166,6 @@ else:
     long_df['IsPercentage'] = long_df['Measurement'].str.contains(r'\(%\)', regex=True)
 
     show_labels = len(long_df) <= 100
-    show_lines = st.sidebar.checkbox("Show lines connecting dots", value=True)
 
     fig = go.Figure()
 
@@ -196,7 +203,10 @@ else:
     st.plotly_chart(fig, use_container_width=True)
 
     if st.checkbox("Show filtered data table"):
+        # Robust row filter: match test type ignoring case and whitespace
         df_table = df_filtered[df_filtered[column_testtype].astype(str).str.strip().str.lower() == test_type.lower()]
+
+        # Define columns to show
         metadata_columns = [
             column_a, column_b, column_c, column_d, column_muestra_probeta_temp,
             column_muestra, column_testtype, column_index, column_tipo_muestra,
@@ -204,10 +214,14 @@ else:
             column_op, column_colada
         ]
         measurement_columns = (
-            columns_traccion if test_type == "Tracción" else
-            columns_dureza if test_type == "Dureza" else
-            columns_charpy
+            columns_traccion if test_type == "Tracción"
+            else columns_dureza if test_type == "Dureza"
+            else columns_charpy
         )
         display_columns = metadata_columns + list(measurement_columns)
+
         df_display = df_table[display_columns].dropna(axis=1, how='all')
         st.write(df_display)
+
+
+
