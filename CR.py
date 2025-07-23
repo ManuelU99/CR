@@ -55,9 +55,9 @@ all_ciclos = sorted(df_filtered[column_c].dropna().unique())
 selected_ciclo = st.sidebar.multiselect("Select Ciclo", all_ciclos, default=all_ciclos)
 df_filtered = df_filtered[df_filtered[column_c].isin(selected_ciclo)]
 
-all_colada = sorted(df_filtered[column_colada].dropna().astype(int).unique())
+all_colada = sorted(df_filtered[column_colada].dropna().unique())
 selected_colada = st.sidebar.multiselect("Select Colada", all_colada, default=all_colada)
-df_filtered = df_filtered[df_filtered[column_colada].astype(int).isin(selected_colada)]
+df_filtered = df_filtered[df_filtered[column_colada].isin(selected_colada)]
 
 all_op = sorted(df_filtered[column_op].dropna().unique())
 selected_op = st.sidebar.multiselect("Select OP", all_op, default=all_op)
