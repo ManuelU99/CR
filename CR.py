@@ -137,15 +137,12 @@ if reason_text:
 if df_filtered.empty:
     st.warning("⚠ No data available for the selected filters.")
 else:
-    long_df = df_filtered.melt(
-        id_vars=[column_a, column_b, column_c, column_d, column_muestra_probeta_temp,
-                 column_muestra, column_testtype, column_index, column_tipo_muestra,
-                 column_soaking, 'Temp', 'MuestraNum', 'GroupNumber',
-                 column_temp_ensayo_req, column_tipo_de_probeta],
-        value_vars=selected_columns,
-        var_name='Measurement',
-        value_name='Value'
-    ).dropna(subset=['Value', 'Temp'])
+    # Add grouping columns
+    long_df['Familia'] = df_filtered[column_d]
+    long_df['Tipo'] = df_filtered[column_a]
+    long_df['Ciclo'] = df_filtered[column_c]
+    long_df['Colada'] = df_filtered[column_colada]
+    long_df['OP'] = df_filtered['OP_display']
 
     def normalize(text):
         return unicodedata.normalize('NFKD', text.lower()).encode('ASCII', 'ignore').decode('utf-8')
@@ -178,21 +175,25 @@ else:
     long_df['IsPercentage'] = long_df['Measurement'].str.contains(r'\(%\)', regex=True)
 
     show_labels = len(long_df) <= 200
-
     fig = go.Figure()
 
-    for (legend, color, dash, is_percentage), group in long_df.groupby(['Legend', 'ColorHex', 'LineDash', 'IsPercentage']):
-        legend_norm = normalize(legend)
-        show_text = group['Value'] if 'req' not in legend_norm and show_labels else None
+    # 🎯 Group by measurement + key filter fields
+    group_columns = ['Legend', 'ColorHex', 'LineDash', 'IsPercentage', 'Familia', 'Tipo', 'Ciclo', 'Colada', 'OP']
+
+    for key_vals, group in long_df.groupby(group_columns):
+        legend, color, dash, is_percentage, fam, tipo, ciclo, colada, op = key_vals
+        legend_full = f"{legend} | {fam}/{tipo}/{ciclo}/{colada}/{op}"
+
+        show_text = group['Value'] if 'req' not in normalize(legend) and show_labels else None
         mode = 'lines+markers+text' if show_text is not None and show_lines else \
-               'markers+text' if show_text is not None else \
-               'lines+markers' if show_lines else 'markers'
+            'markers+text' if show_text is not None else \
+            'lines+markers' if show_lines else 'markers'
 
         fig.add_trace(go.Scatter(
             x=group['Temp'],
             y=group['Value'],
             mode=mode,
-            name=legend,
+            name=legend_full,
             line=dict(color=color, dash=dash),
             text=show_text,
             textposition='top center',
@@ -213,6 +214,7 @@ else:
     )
 
     st.plotly_chart(fig, use_container_width=True)
+
 
     # 🔁 Map display name to actual value in dataset
     test_type_map = {
