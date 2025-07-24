@@ -225,6 +225,19 @@ else:
     # 🔧 Filter rows for the selected Test Type
     df_testtype_filtered = df_filtered[df_filtered[column_testtype] == test_type_actual]
 
+    # Determine which measurement columns to display based on selected Test Type
+    display_columns = df_filtered.columns.intersection(selected_columns).tolist()
+
+    # Always show meta-information columns
+    meta_columns = [column_a, column_b, column_c, column_d, column_muestra_probeta_temp,
+                    column_muestra, column_testtype, column_index, column_tipo_muestra,
+                    column_soaking, 'Temp', 'MuestraNum', 'GroupNumber',
+                    column_temp_ensayo_req, column_tipo_de_probeta]
+
+    # Combine meta and relevant measurement columns
+    columns_to_show = meta_columns + display_columns
+
+
     # 📋 Show table inside collapsible section (open by default)
     with st.expander("📋 Filtered data table", expanded=True):
         st.write(df_testtype_filtered[columns_to_show].dropna(axis=1, how='all'))
