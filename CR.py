@@ -115,7 +115,7 @@ if (
     len(selected_tipo) == 1 and
     len(selected_ciclo) == 1 and
     len(selected_colada) == 1 and
-    len(selected_op) == 1 and
+    len(selected_op) == 1
 ):
     match = df_qc[
         (df_qc['Tipo_Acero_Limpio'].astype(str) == str(selected_tipo[0])) &
