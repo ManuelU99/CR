@@ -239,3 +239,15 @@ else:
         # Display table
         st.write(df_testtype_filtered[columns_to_show].dropna(axis=1, how='all'))
 
+        # 🔗 Show link(s) to original Excel files
+        if 'Full File Path' in df_testtype_filtered.columns:
+            file_links = df_testtype_filtered['Full File Path'].dropna().unique()
+
+            if len(file_links) > 0:
+                st.markdown("### 🔗 Original Excel File(s):")
+                for link in file_links:
+                    st.markdown(f"- [Open file]({link})")
+            else:
+                st.info("ℹ️ No file path available for current selection.")
+        else:
+            st.warning("⚠ 'Full File Path' column not found in the dataset.")
