@@ -114,21 +114,15 @@ reason_text = ""
 if (
     len(selected_tipo) == 1 and
     len(selected_ciclo) == 1 and
-    len(selected_soaking) == 1 and
     len(selected_colada) == 1 and
     len(selected_op) == 1 and
-    len(selected_tipo_de_muestra) == 1 and
-    len(selected_temp_ensayo_req) == 1
 ):
     match = df_qc[
         (df_qc['Tipo_Acero_Limpio'].astype(str) == str(selected_tipo[0])) &
         (df_qc['Ciclo'].astype(str) == str(selected_ciclo[0])) &
-        (df_qc['Soaking'].astype(str) == str(selected_soaking[0])) &
         (df_qc['TestType'].astype(str) == str(test_type)) &
         (df_qc['Colada'].astype(str) == str(selected_colada[0])) &
         (df_qc['OP'].astype(str) == str(selected_op[0])) &
-        (df_qc['Tipo de probeta'].astype(str) == str(selected_tipo_de_muestra[0])) &
-        (df_qc['Temp Ensayo Req'].astype(str) == str(selected_temp_ensayo_req[0]))
     ]
     if not match.empty:
         reason_text = match.iloc[0]['Reason']
