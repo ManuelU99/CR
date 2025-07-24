@@ -246,8 +246,9 @@ else:
             if len(file_links) > 0:
                 st.markdown("### 🔗 Original Excel File(s):")
                 for link in file_links:
-                    st.markdown(f"- [Open file]({link})")
+                    st.text(link)  # Display raw clickable link
             else:
                 st.info("ℹ️ No file path available for current selection.")
         else:
             st.warning("⚠ 'Full File Path' column not found in the dataset.")
+
