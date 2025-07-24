@@ -122,7 +122,7 @@ if (
         (df_qc['Ciclo'].astype(str) == str(selected_ciclo[0])) &
         (df_qc['TestType'].astype(str) == str(test_type)) &
         (df_qc['Colada'].astype(str) == str(selected_colada[0])) &
-        (df_qc['OP'].astype(str) == str(selected_op[0])) &
+        (df_qc['OP'].astype(str) == str(selected_op[0]))
     ]
     if not match.empty:
         reason_text = match.iloc[0]['Reason']
