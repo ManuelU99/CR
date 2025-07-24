@@ -4,6 +4,8 @@ import streamlit as st
 import unicodedata
 import re
 import urllib.parse
+from colorsys import rgb_to_hls, hls_to_rgb
+
 
 
 # Streamlit config
@@ -163,13 +165,16 @@ else:
 
     def assign_color(m):
         m_norm = normalize(m)
+        #Fluencia
         if "fluencia" in m_norm: return '#CC0066'
         if "rotura" in m_norm: return '#00009A'
         if "alarg" in m_norm: return '#009900'
+        #Dureza
         if "dureza" in m_norm and "ind" in m_norm and "max" in m_norm: return '#CC0066'
         if "dureza" in m_norm and "ind" in m_norm and "min" in m_norm: return '#EC36E0'
         if "dureza" in m_norm and "prom" in m_norm and "max" in m_norm: return '#00009A'
-        if "dureza" in m_norm and "prom" in m_norm and "min" in m_norm: return '#1F7CC7'
+        if "dureza" in m_norm and "prom" in m_norm and "min" in m_norm: return '#1F7CC7'       
+        #Charpy
         if "energ" in m_norm and "ind" in m_norm: return '#CC0066'
         if "energ" in m_norm and "prom" in m_norm: return '#00009A'
         if "area" in m_norm and "ind" in m_norm: return '#009900'
@@ -271,5 +276,3 @@ else:
                 st.info("ℹ️ No file path available for current selection.")
         else:
             st.warning("⚠ 'Full File Path' column not found in the dataset.")
-
-
