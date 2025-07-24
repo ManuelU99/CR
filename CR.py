@@ -163,7 +163,7 @@ else:
     long_df['Legend'] = long_df['MeasurementClean'] + ' (Soaking ' + long_df[column_soaking].astype(str) + ')'
     long_df['IsPercentage'] = long_df['Measurement'].str.contains(r'\(%\)', regex=True)
 
-    show_labels = len(long_df) <= 100
+    show_labels = len(long_df) <= 200
 
     fig = go.Figure()
 
