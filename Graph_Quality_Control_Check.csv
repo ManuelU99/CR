@@ -3,3 +3,4 @@ X60,DS423,71030,57968,Missing,Tracción segmento tubular - 38 mm - API - Temp. Am
 Not-Def,DS641,32252,26365,77227,Tracción segmento tubular - 19 mm - ASTM - Temp. Amb.,5,,,Traccion,No,Hay más puntos graficados de los que se plotean en el Excel original
 P110,DS701,85178,57887,Missing,Tracción segmento tubular - 38 mm - API - Temp. Amb.,9,,,Traccion,No,"En el Excel original sólo hay una temperatura, por eso plotea todo en un solo punto"
 P110,DS701,85178,57887,Missing,Dureza espesor cuerpo - 1 - NO - Temp. Amb.,9,,,Dureza,No,"En el Excel original sólo hay una temperatura, por eso plotea todo en un solo punto"
+Not-Def,DS710,87298,22155,Missing,Dureza espesor cuerpo - 1 - NO - Temp. Amb.,,,,Dureza,No,En el Excel le agregaron a mano el valor de Dureza Ind Max Req (24 HRC)
