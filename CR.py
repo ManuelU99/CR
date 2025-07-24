@@ -103,7 +103,11 @@ df_filtered = df_filtered[df_filtered[column_muestra_probeta_temp].isin(selected
 show_lines = st.sidebar.checkbox("Show lines connecting dots", value=True)
 
 # Quality control message
-df_qc = pd.read_csv("https://raw.githubusercontent.com/ManuelU99/CR/refs/heads/main/Graph_Quality_Control_Check.csv")
+df_qc = pd.read_csv(
+    "https://raw.githubusercontent.com/ManuelU99/CR/refs/heads/main/Graph_Quality_Control_Check.csv",
+    encoding='latin1'
+)
+
 
 reason_text = ""
 
