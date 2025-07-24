@@ -1,3 +1,5 @@
 Familia,Tipo_Acero_Limpio,Ciclo,Colada,OP,Tipo de probeta,Soaking,GroupNumber,Temp Ensayo Req,TestType,IsCorrect,Reason
 X60,DS423,71030,57968,Missing,Tracción segmento tubular - 38 mm - API - Temp. Amb.,20,,-15,Charpy,No,"Los puntos graficados son correctos, pero no la unión de puntos con las líneas. Ver Excel original"
 Not-Def,DS641,32252,26365,77227,Tracción segmento tubular - 19 mm - ASTM - Temp. Amb.,5,,,Tracción,No,Hay más puntos graficados de los que se plotean en el Excel original
+P110,DS701,85178,57887,Missing,Tracción segmento tubular - 38 mm - API - Temp. Amb.,9,,,Tracción,No,"En el Excel original sólo hay una temperatura, por eso plotea todo en un solo punto"
+P110,DS701,85178,57887,Missing,Dureza espesor cuerpo - 1 - NO - Temp. Amb.,9,,,Dureza,No,"En el Excel original sólo hay una temperatura, por eso plotea todo en un solo punto"
