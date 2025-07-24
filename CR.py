@@ -3,6 +3,8 @@ import plotly.graph_objects as go
 import streamlit as st
 import unicodedata
 import re
+import urllib.parse
+
 
 # Streamlit config
 st.set_page_config(page_title="Dashboard - Curvas de Revenido", layout="wide")
@@ -233,22 +235,25 @@ else:
         # Combine meta and relevant measurement columns
         columns_to_show = meta_columns + display_columns
 
-        # 🔧 Filter rows for the selected Test Type (e.g. "Tracción")
+        # 🔁 Filter rows for the selected Test Type (e.g. "Tracción")
         df_testtype_filtered = df_filtered[df_filtered[column_testtype] == test_type_actual]
 
-        # Display table
-        st.write(df_testtype_filtered[columns_to_show].dropna(axis=1, how='all'))
+        # Show table inside collapsible section (but open by default)
+        with st.expander("📋 Show filtered data table", expanded=True):
+            st.write(df_testtype_filtered[columns_to_show].dropna(axis=1, how='all'))
 
-        # 🔗 Show link(s) to original Excel files
-        if 'Full File Path' in df_testtype_filtered.columns:
-            file_links = df_testtype_filtered['Full File Path'].dropna().unique()
+            # 🔗 Show link(s) to original Excel files
+            if 'Full File Path' in df_testtype_filtered.columns:
+                file_links = df_testtype_filtered['Full File Path'].dropna().unique()
 
-            if len(file_links) > 0:
-                st.markdown("### 🔗 Original Excel File(s):")
-                for link in file_links:
-                    st.markdown(f"[{link}]({link})")
+                if len(file_links) > 0:
+                    st.markdown("### 🔗 Original Excel File(s):")
+                    for link in file_links:
+                        encoded_link = urllib.parse.quote(link, safe=':/()')  # encode spaces, keep slashes and ()
+                        st.markdown(f"- [Open file]({encoded_link})")
+                else:
+                    st.info("ℹ️ No file path available for current selection.")
             else:
-                st.info("ℹ️ No file path available for current selection.")
-        else:
-            st.warning("⚠ 'Full File Path' column not found in the dataset.")
+                st.warning("⚠ 'Full File Path' column not found in the dataset.")
+
 
