@@ -214,46 +214,33 @@ else:
 
     st.plotly_chart(fig, use_container_width=True)
 
-    if st.checkbox("Show filtered data table"):
-        # 🔁 Map display name to actual value in dataset
-        test_type_map = {
-            "Traccion": "Tracción",
-            "Dureza": "Dureza",
-            "Charpy": "Charpy"
-        }
-        test_type_actual = test_type_map[test_type]
+    # 🔁 Map display name to actual value in dataset
+    test_type_map = {
+        "Traccion": "Tracción",
+        "Dureza": "Dureza",
+        "Charpy": "Charpy"
+    }
+    test_type_actual = test_type_map[test_type]
 
-        # Determine which measurement columns to display based on selected Test Type
-        display_columns = df_filtered.columns.intersection(selected_columns).tolist()
+    # 🔧 Filter rows for the selected Test Type
+    df_testtype_filtered = df_filtered[df_filtered[column_testtype] == test_type_actual]
 
-        # Always show meta-information columns
-        meta_columns = [column_a, column_b, column_c, column_d, column_muestra_probeta_temp,
-                        column_muestra, column_testtype, column_index, column_tipo_muestra,
-                        column_soaking, 'Temp', 'MuestraNum', 'GroupNumber',
-                        column_temp_ensayo_req, column_tipo_de_probeta]
+    # 📋 Show table inside collapsible section (open by default)
+    with st.expander("📋 Filtered data table", expanded=True):
+        st.write(df_testtype_filtered[columns_to_show].dropna(axis=1, how='all'))
 
-        # Combine meta and relevant measurement columns
-        columns_to_show = meta_columns + display_columns
+        # 🔗 Show link(s) to original Excel files
+        if 'Full File Path' in df_testtype_filtered.columns:
+            file_links = df_testtype_filtered['Full File Path'].dropna().unique()
 
-        # 🔁 Filter rows for the selected Test Type (e.g. "Tracción")
-        df_testtype_filtered = df_filtered[df_filtered[column_testtype] == test_type_actual]
-
-        # Show table inside collapsible section (but open by default)
-        with st.expander("📋 Show filtered data table", expanded=True):
-            st.write(df_testtype_filtered[columns_to_show].dropna(axis=1, how='all'))
-
-            # 🔗 Show link(s) to original Excel files
-            if 'Full File Path' in df_testtype_filtered.columns:
-                file_links = df_testtype_filtered['Full File Path'].dropna().unique()
-
-                if len(file_links) > 0:
-                    st.markdown("### 🔗 Original Excel File(s):")
-                    for link in file_links:
-                        encoded_link = urllib.parse.quote(link, safe=':/()')  # encode spaces, keep slashes and ()
-                        st.markdown(f"- [Open file]({encoded_link})")
-                else:
-                    st.info("ℹ️ No file path available for current selection.")
+            if len(file_links) > 0:
+                st.markdown("### 🔗 Original Excel File(s):")
+                for raw_link in file_links:
+                    encoded_link = urllib.parse.quote(raw_link, safe=':/()')
+                    st.markdown(f"- [{raw_link}]({encoded_link})")
             else:
-                st.warning("⚠ 'Full File Path' column not found in the dataset.")
+                st.info("ℹ️ No file path available for current selection.")
+        else:
+            st.warning("⚠ 'Full File Path' column not found in the dataset.")
 
 
