@@ -1,3 +1,2 @@
-Familia,Tipo_Acero_Limpio,Ciclo,Soaking,GroupNumber,TestType,IsCorrect,Reason
-T95,DS308,85162,15,1,Traccion,No,Graph from the original data is different because it plots data points from different groups. Please check the Excel file
-T95,DS308,85162,15,2,Traccion,No,pruebita
+Familia,Tipo_Acero_Limpio,Ciclo,Colada,OP,Tipo de probeta,Soaking,GroupNumber,Temp Ensayo Req,TestType,IsCorrect,Reason
+X60,DS423,71030,57968,Missing,Tracción segmento tubular - 38 mm - API - Temp. Amb.,20,,-15.0,Charpy,No,teeeeest
