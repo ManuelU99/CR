@@ -139,14 +139,15 @@ if df_filtered.empty:
 else:
     # Add grouping columns
     long_df = df_filtered.melt(
-        id_vars=[column_a, column_b, column_c, column_d, column_muestra_probeta_temp,
-                column_muestra, column_testtype, column_index, column_tipo_muestra,
-                column_soaking, 'Temp', 'MuestraNum', 'GroupNumber',
+        id_vars=[column_a, column_b, column_c, column_d, column_colada, 'OP_display',
+                column_muestra_probeta_temp, column_muestra, column_testtype, column_index,
+                column_tipo_muestra, column_soaking, 'Temp', 'MuestraNum', 'GroupNumber',
                 column_temp_ensayo_req, column_tipo_de_probeta],
         value_vars=selected_columns,
         var_name='Measurement',
         value_name='Value'
     ).dropna(subset=['Value', 'Temp'])
+
 
     # ✅ Now it’s safe to assign new columns to long_df
     long_df['Familia'] = long_df[column_d]
@@ -154,6 +155,7 @@ else:
     long_df['Ciclo'] = long_df[column_c]
     long_df['Colada'] = long_df[column_colada]
     long_df['OP'] = long_df['OP_display']
+
 
 
     def normalize(text):
